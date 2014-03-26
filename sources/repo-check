@@ -1,0 +1,133 @@
+#!/bin/bash
+#     repo-scripts is a set of scripts to work with your repository
+#     Copyright (C) 2014 Evgeniy Alekseev
+# 
+#     This program is free software; you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation; either version 3 of the License, or
+#     (at your option) any later version.
+# 
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+# 
+#     You should have received a copy of the GNU General Public License
+#     along with this program; if not, see http://www.gnu.org/licenses
+#     or write to the Free Software Foundation,Inc., 51 Franklin Street,
+#     Fifth Floor, Boston, MA 02110-1301  USA
+
+
+# functions
+error_mes() {
+  case "$1" in
+    "config"  ) echo "[EE] Configuration file is not set"                     ;;
+    "file"    ) echo "[EE] '$2' is a file"                                    ;;
+    "flag"    ) echo "[EE] Unknown flag"                                      ;;
+    "unknown" ) echo "[EE] Unknown error"                                     ;;
+  esac
+  exit 1
+}
+func_help() {
+  echo -e "Script written on BASH for checking packages for updates"
+  echo -e "\nUsage: repo-check [ -c /etc/repo-scripts.conf ] [ -v | --version ] [ -h | --help ]"
+  echo -e "\nParametrs:"
+  echo -e "  -c               PATH     - path to configuration file. Default is
+                              '/etc/repo-scripts.conf'"
+  echo -e "\n  -v   --version            - show version and exit"
+  echo -e "  -h   --help               - show this help and exit"
+  exit 0
+}
+func_ver() {
+  echo -e "                                   repo-check                                   "
+  echo -e "A set of scripts to work with your repository                                   "
+  echo -e "Version : 1.0.0                                                  License : GPLv3"
+  echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
+  echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
+  exit 0
+}
+func_update() {
+  PKGNAME="$1"
+  REPODIR="$2"
+
+  echo "[II] => Checking ${PKGNAME}"
+  echo ${PKGNAME} | /usr/bin/grep -q "\-bzr\|\-git\|\-svn" && return 1;
+  /usr/bin/yaourt -G aur/${PKGNAME} &> /dev/null
+  [ -d ${PKGNAME} ] || return 1;
+  
+  cd ${PKGNAME}
+  PKGVER=$(/usr/bin/basename $(/usr/bin/find ${REPODIR} -name "${PKGNAME}*.pkg.tar.xz") | /usr/bin/awk -F '-' '{printf("%s-%s", $(NF-2), $(NF-1));}')
+  _NEWVER=$(/usr/bin/grep ^pkgver= PKGBUILD | /usr/bin/sed 's/^pkgver=//' | /usr/bin/tr -d \"\|\')
+  _NEWREL=$(/usr/bin/grep ^pkgrel= PKGBUILD | /usr/bin/sed 's/^pkgrel=//' | /usr/bin/tr -d \"\|\')
+  NEWVER="${_NEWVER}-${_NEWREL}"
+  cd ../
+  if [ "${PKGVER}" = "${NEWVER}" ]; then
+    /usr/bin/rm -rf ${PKGNAME}
+    echo "[II] ${PKGNAME} is up-to-date"
+  else
+    echo "[II] ${PKGNAME} is out-of-date"
+  fi
+}
+
+CONF_FILE="/etc/repo-scripts.conf"
+# parametrs parsing
+until [ -z $1 ]; do
+  case "$1" in
+    "-h" | "--help"    ) func_help                                                    ;;
+    "-v" | "--version" ) func_ver                                                     ;;
+    "-c"               ) [ -z "$2" ] && error_mes "config" || CONF_FILE="$2" && shift ;;
+    *                  ) error_mes "flag"                                             ;;
+  esac
+  shift
+done
+# default values
+REPODIR="${HOME}/arch/repo"
+STAGINGDIR="${HOME}/arch/staging/"
+echo "[II] Reading configuration from '${CONF_FILE}'"
+. "${CONF_FILE}"
+
+# error checking
+if [ ! -d "${REPODIR}" ]; then
+  [ -e "${REPODIR}" ] && error_mes "file" "${REPODIR}"
+  echo "[II] Creating directory '${REPODIR}'"
+  mkdir -p "${REPODIR}/"{i686,x86_64} || error_mes "unknown"
+fi
+if [ ! -d "${REPODIR}/i686" ]; then
+  [ -e "${REPODIR}/i686" ] && error_mes "file" "${REPODIR}/i686"
+  echo "[II] Creating directory '${REPODIR}/i686'"
+  mkdir -p "${REPODIR}/i686" || error_mes "unknown"
+fi
+if [ ! -d "${REPODIR}/x86_64" ]; then
+  [ -e "${REPODIR}/x86_64" ] && error_mes "file" "${REPODIR}/x86_64"
+  echo "[II] Creating directory '${REPODIR}/x86_64'"
+  mkdir -p "${REPODIR}/x86_64" || error_mes "unknown"
+fi
+if [ ! -d "${STAGINGDIR}" ]; then
+  [ -e "${STAGINGDIR}" ] && error_mes "file" "${STAGINGDIR}"
+  echo "[II] Creating directory '${STAGINGDIR}'"
+  mkdir -p "${STAGINGDIR}" || error_mes "unknown"
+fi
+
+
+## work block
+# get list
+echo "[II] Get list of packages"
+/usr/bin/rm -f "${STAGINGDIR}/pkglist"
+cd "${REPODIR}/i686"
+/usr/bin/find * -name "*.pkg.tar.xz" >> "${STAGINGDIR}/pkglist"
+
+# work block
+echo "[II] Check packages"
+cd "${STAGINGDIR}"
+for PACKAGE in $(cat pkglist); do
+  PKGNAME=$(echo ${PACKAGE} | /usr/bin/awk -F '-' '{for(i=1; i<=NF-3;i++) {printf("%s-", $i);}}' | /usr/bin/sed 's/.$//')
+  func_update "${PKGNAME}" "${REPODIR}"
+done
+/usr/bin/rm -f "${STAGINGDIR}/pkglist"
+
+# check for updates
+echo "[II] Check for updates"
+cd "${STAGINGDIR}"
+if [[ $(find * -type d 2> /dev/null | wc -l) > 0 ]]; then
+  /usr/bin/repo-update -c "${CONF_FILE}"
+fi
