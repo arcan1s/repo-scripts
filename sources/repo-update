@@ -42,7 +42,7 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-update                                  "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.0.0                                                  License : GPLv3"
+  echo -e "Version : 1.0.1                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
@@ -133,7 +133,7 @@ cd "${STAGINGDIR}"
 if [ ${USEGPG} == "yes" ]; then
   echo "[II] Signing"
   cd "${PREPAREDIR}"
-  for PACKAGE in $(/usr/bin/ls *.pkg.tar.xz); do
+  for PACKAGE in $(/usr/bin/find . -name '*.pkg.tar.xz'); do
     /usr/bin/gpg -b ${PACKAGE}
   done
 fi
