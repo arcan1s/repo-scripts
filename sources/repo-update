@@ -42,7 +42,7 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-update                                  "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.0.1                                                  License : GPLv3"
+  echo -e "Version : 1.0.2                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
@@ -140,10 +140,10 @@ fi
 
 # creating packages list
 cd "${PREPAREDIR}"
-i686_PACKAGES=$(/usr/bin/find * -name "*-i686.pkg.tar.xz" -o -name "*-any.pkg.tar.xz")
-x86_64_PACKAGES=$(/usr/bin/find * -name "*-x86_64.pkg.tar.xz" -o -name "*-any.pkg.tar.xz")
-echo "[II] => i686 packages: \n${i686_PACKAGES}"
-echo "[II] => x86_64 packages: \n${x86_64_PACKAGES}"
+i686_PACKAGES=$(/usr/bin/find * -name '*-i686.pkg.tar.xz' -o -name "*-any.pkg.tar.xz")
+x86_64_PACKAGES=$(/usr/bin/find * -name '*-x86_64.pkg.tar.xz' -o -name "*-any.pkg.tar.xz")
+echo -n "[II] => i686 packages: \n${i686_PACKAGES}"
+echo -n "[II] => x86_64 packages: \n${x86_64_PACKAGES}"
 
 # updating i686 repo
 echo "[II] Updating i686 repo"
@@ -153,21 +153,21 @@ for PACKAGE in ${i686_PACKAGES}; do
   /usr/bin/find -name "${PKGNAME}*.pkg.tar.xz" -type f -exec /usr/bin/bash -c "func_remove "${DBNAME}" "${PKGNAME}"" \;
   /usr/bin/cp "${PREPAREDIR}/${PACKAGE}" .
   [ ${USEGPG} == "yes" ] && /usr/bin/cp "${PREPAREDIR}/${PACKAGE}.sig" .
+  /usr/bin/repo-add --new ${DBNAME}.db.tar.gz "${PACKAGE}"
+  /usr/bin/repo-add --new --files ${DBNAME}.files.tar.gz "${PACKAGE}"
 done
-/usr/bin/repo-add --quiet --new ${DBNAME}.db.tar.gz *.pkg.tar.xz
-/usr/bin/repo-add --quiet --new --files ${DBNAME}.files.tar.gz *.pkg.tar.xz
 
 # updating x86_64 repo
 echo "[II] Updating x86_64 repo"
 cd "${REPODIR}/x86_64"
 for PACKAGE in ${x86_64_PACKAGES}; do
   PKGNAME=$(echo ${PACKAGE} | /usr/bin/awk -F '-' '{for(i=1; i<=NF-3;i++) {printf("%s-", $i);}}' | /usr/bin/sed 's/.$//')
-  /usr/bin/find -name "${PKGNAME}*.pkg.tar.xz" -type f -exec /usr/bin/bash -c "func_remove "${DBNAME}" "${PKGNAME}"" \;
+  /usr/bin/find -name "${PKGNAME}"'*.pkg.tar.xz' -type f -exec /usr/bin/bash -c "func_remove "${DBNAME}" "${PKGNAME}"" \;
   /usr/bin/cp "${PREPAREDIR}/${PACKAGE}" .
   [ ${USEGPG} == "yes" ] && /usr/bin/cp "${PREPAREDIR}/${PACKAGE}.sig" .
+  /usr/bin/repo-add --new ${DBNAME}.db.tar.gz "${PACKAGE}"
+  /usr/bin/repo-add --new --files ${DBNAME}.files.tar.gz "${PACKAGE}"
 done
-/usr/bin/repo-add --quiet --new ${DBNAME}.db.tar.gz *.pkg.tar.xz
-/usr/bin/repo-add --quiet --new --files ${DBNAME}.files.tar.gz *.pkg.tar.xz
 
 # clear
 echo "[II] Clear"

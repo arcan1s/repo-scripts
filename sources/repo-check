@@ -41,7 +41,7 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-check                                   "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.0.1                                                  License : GPLv3"
+  echo -e "Version : 1.0.2                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
@@ -114,7 +114,7 @@ fi
 echo "[II] Get list of packages"
 /usr/bin/rm -f "${STAGINGDIR}/pkglist"
 cd "${REPODIR}/i686"
-/usr/bin/find * -name "*.pkg.tar.xz" >> "${STAGINGDIR}/pkglist"
+/usr/bin/find * -name '*.pkg.tar.xz' >> "${STAGINGDIR}/pkglist"
 
 # work block
 echo "[II] Check packages"
