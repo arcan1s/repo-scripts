@@ -42,7 +42,7 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-update                                  "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.0.2                                                  License : GPLv3"
+  echo -e "Version : 1.0.3                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
@@ -50,8 +50,6 @@ func_ver() {
 func_remove() {
   DBNAME="$1"
   PKGNAME="$2"
-  /usr/bin/repo-remove --quiet ${DBNAME}.db.tar.gz ${PKGNAME}
-  /usr/bin/repo-remove --quiet ${DBNAME}.files.tar.gz ${PKGNAME}
   /usr/bin/rm -f ${PKGNAME}*
 }
 export -f func_remove
