@@ -42,7 +42,7 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-update                                  "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.0.3                                                  License : GPLv3"
+  echo -e "Version : 1.0.4                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
@@ -59,12 +59,17 @@ func_build() {
   if grep "arch=('any')" PKGBUILD -q; then
     /usr/bin/sudo /usr/bin/staging-i686-build -r "${ROOT}"
   else
-    if grep "lib32" PKGBUILD -q; then
-      /usr/bin/sudo /usr/bin/staging-i686-build -r "${ROOT}"
+    eval $(/usr/bin/grep 'pkgname=' PKGBUILD)
+    if echo ${pkgname} | /usr/bin/grep lib32 -q; then
       /usr/bin/sudo /usr/bin/multilib-staging-build -r "${ROOT}"
     else
-      /usr/bin/sudo /usr/bin/staging-i686-build -r "${ROOT}"
-      /usr/bin/sudo /usr/bin/staging-x86_64-build -r "${ROOT}"
+      if /usr/bin/grep "lib32" PKGBUILD -q; then
+        /usr/bin/sudo /usr/bin/staging-i686-build -r "${ROOT}"
+        /usr/bin/sudo /usr/bin/multilib-staging-build -r "${ROOT}"
+      else
+        /usr/bin/sudo /usr/bin/staging-i686-build -r "${ROOT}"
+        /usr/bin/sudo /usr/bin/staging-x86_64-build -r "${ROOT}"
+      fi
     fi
   fi
   /usr/bin/cp *.pkg.tar.xz "${PREPARE}"
