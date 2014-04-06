@@ -1,2 +1,3 @@
 qdtest/*
-*.src.tar.xz
+*src.tar.xz
+*src.tar.gz
