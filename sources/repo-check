@@ -41,7 +41,7 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-check                                   "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.0.5                                                  License : GPLv3"
+  echo -e "Version : 1.0.6                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
@@ -57,9 +57,10 @@ func_update() {
   
   cd ${PKGNAME}
   PKGVER=$(/usr/bin/basename $(/usr/bin/find ${REPODIR} -name "${PKGNAME}*.pkg.tar.xz") | /usr/bin/awk -F '-' '{printf("%s-%s", $(NF-2), $(NF-1));}')
+  _NEWEPOCH=$(/usr/bin/grep ^epoch= PKGBUILD | /usr/bin/sed 's/^epoch=//' | /usr/bin/tr -d \"\|\')
   _NEWVER=$(/usr/bin/grep ^pkgver= PKGBUILD | /usr/bin/sed 's/^pkgver=//' | /usr/bin/tr -d \"\|\')
   _NEWREL=$(/usr/bin/grep ^pkgrel= PKGBUILD | /usr/bin/sed 's/^pkgrel=//' | /usr/bin/tr -d \"\|\')
-  NEWVER="${_NEWVER}-${_NEWREL}"
+  [[ -z "${_NEWEPOCH}" ]] && NEWVER="${_NEWVER}-${_NEWREL}" || NEWVER="${_NEWEPOCH}:${_NEWVER}-${_NEWREL}"
   cd ../
   if [ "${PKGVER}" = "${NEWVER}" ]; then
     /usr/bin/rm -rf ${PKGNAME}
