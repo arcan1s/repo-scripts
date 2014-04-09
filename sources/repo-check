@@ -114,6 +114,8 @@ fi
 # get list
 echo "[II] Get list of packages"
 /usr/bin/rm -f "${STAGINGDIR}/pkglist"
+cd "${REPODIR}/i686"
+/usr/bin/find . -name '*.pkg.tar.xz' | cut -c 3- >> "${STAGINGDIR}/pkglist"
 cd "${REPODIR}/x86_64"
 /usr/bin/find . -name '*.pkg.tar.xz' | cut -c 3- >> "${STAGINGDIR}/pkglist"
 

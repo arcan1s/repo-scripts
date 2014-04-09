@@ -9,7 +9,7 @@ url="https://github.com/arcan1s/repo-scripts"
 license=("GPLv3")
 depends=('bash')
 source=(https://github.com/arcan1s/repo-scripts/releases/download/V.${pkgver}/${pkgname}-${pkgver}-src.tar.xz)
-md5sums=('77eca7daf1bcac696b7a1ef35b4370cd')
+md5sums=('12106dbc34b3a4a02b892cd5f8193d4e')
 backup=('etc/repo-scripts.conf')
 
 package() {
