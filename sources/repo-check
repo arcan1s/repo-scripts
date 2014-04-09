@@ -114,8 +114,8 @@ fi
 # get list
 echo "[II] Get list of packages"
 /usr/bin/rm -f "${STAGINGDIR}/pkglist"
-cd "${REPODIR}/i686"
-/usr/bin/find * -name '*.pkg.tar.xz' >> "${STAGINGDIR}/pkglist"
+cd "${REPODIR}/x86_64"
+/usr/bin/find . -name '*.pkg.tar.xz' | cut -c 3- >> "${STAGINGDIR}/pkglist"
 
 # work block
 echo "[II] Check packages"
@@ -129,6 +129,6 @@ done
 # check for updates
 echo "[II] Check for updates"
 cd "${STAGINGDIR}"
-if [[ $(find * -type d | wc -l) > 0 ]]; then
+if [[ $(find . -type d | wc -l) > 1 ]]; then
   /usr/bin/repo-update -c "${CONF_FILE}"
 fi

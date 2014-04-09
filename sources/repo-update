@@ -55,19 +55,20 @@ export -f func_remove
 func_build() {
   PREPARE="$1"
   ROOT="$2"
-  if grep "arch=('any')" PKGBUILD -q; then
-    /usr/bin/sudo /usr/bin/staging-i686-build -r "${ROOT}"
+  eval $(/usr/bin/grep 'arch=' PKGBUILD)
+  if echo ${arch} | /usr/bin/grep any -q; then
+    /usr/bin/sudo /usr/bin/staging-i686-build -r "${ROOT}" -c
   else
     eval $(/usr/bin/grep 'pkgname=' PKGBUILD)
     if echo ${pkgname} | /usr/bin/grep lib32 -q; then
-      /usr/bin/sudo /usr/bin/multilib-staging-build -r "${ROOT}"
+      /usr/bin/sudo /usr/bin/multilib-staging-build -r "${ROOT}" -c
     else
       if /usr/bin/grep "lib32" PKGBUILD -q; then
-        /usr/bin/sudo /usr/bin/staging-i686-build -r "${ROOT}"
-        /usr/bin/sudo /usr/bin/multilib-staging-build -r "${ROOT}"
+        /usr/bin/sudo /usr/bin/staging-i686-build -r "${ROOT}" -c
+        /usr/bin/sudo /usr/bin/multilib-staging-build -r "${ROOT}" -c
       else
-        /usr/bin/sudo /usr/bin/staging-i686-build -r "${ROOT}"
-        /usr/bin/sudo /usr/bin/staging-x86_64-build -r "${ROOT}"
+        /usr/bin/sudo /usr/bin/staging-i686-build -r "${ROOT}" -c
+        /usr/bin/sudo /usr/bin/staging-x86_64-build -r "${ROOT}" -c
       fi
     fi
   fi
@@ -142,8 +143,8 @@ fi
 
 # creating packages list
 cd "${PREPAREDIR}"
-i686_PACKAGES=$(/usr/bin/find * -name '*-i686.pkg.tar.xz' -o -name "*-any.pkg.tar.xz")
-x86_64_PACKAGES=$(/usr/bin/find * -name '*-x86_64.pkg.tar.xz' -o -name "*-any.pkg.tar.xz")
+i686_PACKAGES=$(/usr/bin/find * -name '*-i686.pkg.tar.xz' -o -name '*-any.pkg.tar.xz')
+x86_64_PACKAGES=$(/usr/bin/find * -name '*-x86_64.pkg.tar.xz' -o -name '*-any.pkg.tar.xz')
 echo -e "[II] => i686 packages: \n${i686_PACKAGES}"
 echo -e "[II] => x86_64 packages: \n${x86_64_PACKAGES}"
 
