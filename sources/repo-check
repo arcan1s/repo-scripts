@@ -44,7 +44,7 @@ func_ver() {
   echo -e "Version : 1.0.7                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
-  exit 0
+  txit 0
 }
 func_update() {
   PKGNAME="$1"
@@ -52,7 +52,7 @@ func_update() {
 
   echo "[II] => Checking ${PKGNAME}"
   echo ${PKGNAME} | /usr/bin/grep -q "\-bzr\|\-git\|\-svn" && return 1;
-  /usr/bin/yaourt -G aur/${PKGNAME} &> /dev/null
+  /usr/bin/yaourt -G aur/${PKGNAME} --noconfirm &> /dev/null
   [ -d ${PKGNAME} ] || return 1;
 
   cd ${PKGNAME}
