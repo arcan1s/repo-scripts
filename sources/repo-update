@@ -48,7 +48,7 @@ func_ver() {
   exit 0
 }
 func_remove() {
-  PKGNAME="$2"
+  PKGNAME="$1"
   /usr/bin/rm -f ${PKGNAME}-[0-9]*
 }
 export -f func_remove
