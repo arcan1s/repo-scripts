@@ -42,15 +42,14 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-update                                  "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.0.6                                                  License : GPLv3"
+  echo -e "Version : 1.0.7                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
 }
 func_remove() {
-  DBNAME="$1"
   PKGNAME="$2"
-  /usr/bin/rm -f ${PKGNAME}*
+  /usr/bin/rm -f ${PKGNAME}-[0-9]*
 }
 export -f func_remove
 func_build() {
@@ -153,7 +152,7 @@ echo "[II] Updating i686 repo"
 cd "${REPODIR}/i686"
 for PACKAGE in ${i686_PACKAGES}; do
   PKGNAME=$(echo ${PACKAGE} | /usr/bin/awk -F '-' '{for(i=1; i<=NF-3;i++) {printf("%s-", $i);}}' | /usr/bin/sed 's/.$//')
-  /usr/bin/find -name "${PKGNAME}*.pkg.tar.xz" -type f -exec /usr/bin/bash -c "func_remove "${DBNAME}" "${PKGNAME}"" \;
+  /usr/bin/find -name "${PKGNAME}*.pkg.tar.xz" -type f -exec /usr/bin/bash -c "func_remove "${PKGNAME}"" \;
   /usr/bin/cp "${PREPAREDIR}/${PACKAGE}" .
   [ ${USEGPG} == "yes" ] && /usr/bin/cp "${PREPAREDIR}/${PACKAGE}.sig" .
   /usr/bin/repo-add --new ${DBNAME}.db.tar.gz "${PACKAGE}"
@@ -165,7 +164,7 @@ echo "[II] Updating x86_64 repo"
 cd "${REPODIR}/x86_64"
 for PACKAGE in ${x86_64_PACKAGES}; do
   PKGNAME=$(echo ${PACKAGE} | /usr/bin/awk -F '-' '{for(i=1; i<=NF-3;i++) {printf("%s-", $i);}}' | /usr/bin/sed 's/.$//')
-  /usr/bin/find -name "${PKGNAME}"'*.pkg.tar.xz' -type f -exec /usr/bin/bash -c "func_remove "${DBNAME}" "${PKGNAME}"" \;
+  /usr/bin/find -name "${PKGNAME}"'*.pkg.tar.xz' -type f -exec /usr/bin/bash -c "func_remove "${PKGNAME}"" \;
   /usr/bin/cp "${PREPAREDIR}/${PACKAGE}" .
   [ ${USEGPG} == "yes" ] && /usr/bin/cp "${PREPAREDIR}/${PACKAGE}.sig" .
   /usr/bin/repo-add --new ${DBNAME}.db.tar.gz "${PACKAGE}"

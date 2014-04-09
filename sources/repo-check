@@ -1,17 +1,17 @@
 #!/bin/bash
 #     repo-scripts is a set of scripts to work with your repository
 #     Copyright (C) 2014 Evgeniy Alekseev
-# 
+#
 #     This program is free software; you can redistribute it and/or modify
 #     it under the terms of the GNU General Public License as published by
 #     the Free Software Foundation; either version 3 of the License, or
 #     (at your option) any later version.
-# 
+#
 #     This program is distributed in the hope that it will be useful,
 #     but WITHOUT ANY WARRANTY; without even the implied warranty of
 #     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #     GNU General Public License for more details.
-# 
+#
 #     You should have received a copy of the GNU General Public License
 #     along with this program; if not, see http://www.gnu.org/licenses
 #     or write to the Free Software Foundation,Inc., 51 Franklin Street,
@@ -41,7 +41,7 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-check                                   "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.0.6                                                  License : GPLv3"
+  echo -e "Version : 1.0.7                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
@@ -54,7 +54,7 @@ func_update() {
   echo ${PKGNAME} | /usr/bin/grep -q "\-bzr\|\-git\|\-svn" && return 1;
   /usr/bin/yaourt -G aur/${PKGNAME} &> /dev/null
   [ -d ${PKGNAME} ] || return 1;
-  
+
   cd ${PKGNAME}
   PKGVER=$(/usr/bin/basename $(/usr/bin/find ${REPODIR} -name "${PKGNAME}*.pkg.tar.xz") | /usr/bin/awk -F '-' '{printf("%s-%s", $(NF-2), $(NF-1));}')
   _NEWEPOCH=$(/usr/bin/grep ^epoch= PKGBUILD | /usr/bin/sed 's/^epoch=//' | /usr/bin/tr -d \"\|\')
