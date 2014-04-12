@@ -18,6 +18,23 @@
 #     Fifth Floor, Boston, MA 02110-1301  USA
 
 
+# colors
+black='\e[0;30m'
+bblack='\e[1;30m'
+red='\e[0;31m'
+bred='\e[1;31m'
+green='\e[0;32m'
+bgreen='\e[1;32m'
+yellow='\e[0;33m'
+byellow='\e[1;33m'
+blue='\e[0;34m'
+bblue='\e[1;34m'
+purple='\e[0;35m'
+bpurple='\e[1;35m'
+cyan='\e[0;36m'
+bcyan='\e[1;36m'
+white='\e[0;37m'
+bwhite='\e[1;37m'
 # functions
 error_mes() {
   case "$1" in
@@ -42,7 +59,7 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-update                                  "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.0.8                                                  License : GPLv3"
+  echo -e "Version : 1.1.0                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
@@ -94,47 +111,47 @@ REPODIR="${HOME}/arch/repo"
 ROOTDIR="${HOME}/arch/root"
 STAGINGDIR="${HOME}/arch/staging/"
 USEGPG="yes"
-echo "[II] Reading configuration from '${CONF_FILE}'"
+echo "${bwhite}[II] Reading configuration from '${CONF_FILE}'"
 . "${CONF_FILE}"
 # variables
 
 # error checking
 if [ ! -d "${PREPAREDIR}" ]; then
   [ -e "${PREPAREDIR}" ] && error_mes "file" "${PREPAREDIR}"
-  echo "[II] Creating directory '${PREPAREDIR}'"
+  echo "${bblue}[II] Creating directory '${PREPAREDIR}'"
   mkdir -p "${PREPAREDIR}" || error_mes "unknown"
 fi
 if [ ! -d "${REPODIR}" ]; then
   [ -e "${REPODIR}" ] && error_mes "file" "${REPODIR}"
-  echo "[II] Creating directory '${REPODIR}'"
+  echo "${bblue}[II] Creating directory '${REPODIR}'"
   mkdir -p "${REPODIR}/"{i686,x86_64} || error_mes "unknown"
 fi
 if [ ! -d "${REPODIR}/i686" ]; then
   [ -e "${REPODIR}/i686" ] && error_mes "file" "${REPODIR}/i686"
-  echo "[II] Creating directory '${REPODIR}/i686'"
+  echo "${bblue}[II] Creating directory '${REPODIR}/i686'"
   mkdir -p "${REPODIR}/i686" || error_mes "unknown"
 fi
 if [ ! -d "${REPODIR}/x86_64" ]; then
   [ -e "${REPODIR}/x86_64" ] && error_mes "file" "${REPODIR}/x86_64"
-  echo "[II] Creating directory '${REPODIR}/x86_64'"
+  echo "${bblue}[II] Creating directory '${REPODIR}/x86_64'"
   mkdir -p "${REPODIR}/x86_64" || error_mes "unknown"
 fi
 if [ ! -d "${STAGINGDIR}" ]; then
   [ -e "${STAGINGDIR}" ] && error_mes "file" "${STAGINGDIR}"
-  echo "[II] Creating directory '${STAGINGDIR}'"
+  echo "${bblue}[II] Creating directory '${STAGINGDIR}'"
   mkdir -p "${STAGINGDIR}" || error_mes "unknown"
 fi
 
 
 ## work block
 # building
-echo "[II] Building packages"
+echo "${bwhite}[II] Building packages"
 cd "${STAGINGDIR}"
 /usr/bin/find -name 'PKGBUILD' -type f -execdir /usr/bin/bash -c "func_build "${PREPAREDIR}" "${ROOTDIR}"" \;
 
 # signing
 if [ ${USEGPG} == "yes" ]; then
-  echo "[II] Signing"
+  echo "${bwhite}[II] Signing"
   cd "${PREPAREDIR}"
   for PACKAGE in $(/usr/bin/find . -name '*.pkg.tar.xz'); do
     /usr/bin/gpg -b ${PACKAGE}
@@ -149,7 +166,7 @@ echo -e "[II] => i686 packages: \n${i686_PACKAGES}"
 echo -e "[II] => x86_64 packages: \n${x86_64_PACKAGES}"
 
 # updating i686 repo
-echo "[II] Updating i686 repo"
+echo "${bwhite}[II] Updating i686 repo"
 cd "${REPODIR}/i686"
 for PACKAGE in ${i686_PACKAGES}; do
   PKGNAME=$(echo ${PACKAGE} | /usr/bin/awk -F '-' '{for(i=1; i<=NF-3;i++) {printf("%s-", $i);}}' | /usr/bin/sed 's/.$//')
@@ -161,7 +178,7 @@ for PACKAGE in ${i686_PACKAGES}; do
 done
 
 # updating x86_64 repo
-echo "[II] Updating x86_64 repo"
+echo "${bwhite}[II] Updating x86_64 repo"
 cd "${REPODIR}/x86_64"
 for PACKAGE in ${x86_64_PACKAGES}; do
   PKGNAME=$(echo ${PACKAGE} | /usr/bin/awk -F '-' '{for(i=1; i<=NF-3;i++) {printf("%s-", $i);}}' | /usr/bin/sed 's/.$//')
@@ -173,7 +190,7 @@ for PACKAGE in ${x86_64_PACKAGES}; do
 done
 
 # clear
-echo "[II] Clear"
+echo "${bwhite}[II] Clear"
 cd "${PREPAREDIR}"
 /usr/bin/rm -rf *
 cd "${STAGINGDIR}"
