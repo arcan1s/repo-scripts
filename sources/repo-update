@@ -18,31 +18,17 @@
 #     Fifth Floor, Boston, MA 02110-1301  USA
 
 
-# colors
-black='\e[0;30m'
-bblack='\e[1;30m'
-red='\e[0;31m'
-bred='\e[1;31m'
-green='\e[0;32m'
-bgreen='\e[1;32m'
-yellow='\e[0;33m'
-byellow='\e[1;33m'
-blue='\e[0;34m'
-bblue='\e[1;34m'
-purple='\e[0;35m'
-bpurple='\e[1;35m'
-cyan='\e[0;36m'
-bcyan='\e[1;36m'
-white='\e[0;37m'
-bwhite='\e[1;37m'
 # functions
 error_mes() {
+  if [ ${USECOLOR} == "yes" ]; then
+    red='\e[0;31m'
+    cclose='\e[0m'
+  fi
   case "$1" in
-    "config"    ) echo "[EE] Configuration file is not set"                   ;;
-    "directory" ) echo "[EE] Directory does not exists"                       ;;
-    "file"      ) echo "[EE] '$2' is a file"                                  ;;
-    "flag"      ) echo "[EE] Unknown flag"                                    ;;
-    "unknown"   ) echo "[EE] Unknown error"                                   ;;
+    "config"    ) echo "${red}[EE] Configuration file is not set${cclose}"                   ;;
+    "file"      ) echo "${red}[EE] '$2' is a file${cclose}"                                  ;;
+    "flag"      ) echo "${red}[EE] Unknown flag${cclose}"                                    ;;
+    "unknown"   ) echo "${red}[EE] Unknown error${cclose}"                                   ;;
   esac
   exit 1
 }
@@ -59,7 +45,7 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-update                                  "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.1.0                                                  License : GPLv3"
+  echo -e "Version : 1.1.1                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
@@ -110,48 +96,68 @@ PREPAREDIR="${HOME}/arch/prepare"
 REPODIR="${HOME}/arch/repo"
 ROOTDIR="${HOME}/arch/root"
 STAGINGDIR="${HOME}/arch/staging/"
+USECOLOR="yes"
 USEGPG="yes"
-echo "${bwhite}[II] Reading configuration from '${CONF_FILE}'"
+echo -e "[II] Reading configuration from '${CONF_FILE}'"
 . "${CONF_FILE}"
-# variables
+if [ ${USECOLOR} == "yes" ]; then
+  black='\e[0;30m'
+  bblack='\e[1;30m'
+  red='\e[0;31m'
+  bred='\e[1;31m'
+  green='\e[0;32m'
+  bgreen='\e[1;32m'
+  yellow='\e[0;33m'
+  byellow='\e[1;33m'
+  blue='\e[0;34m'
+  bblue='\e[1;34m'
+  purple='\e[0;35m'
+  bpurple='\e[1;35m'
+  cyan='\e[0;36m'
+  bcyan='\e[1;36m'
+  white='\e[0;37m'
+  bwhite='\e[1;37m'
+  cclose='\e[0m'
+fi
+export USECOLOR
 
 # error checking
 if [ ! -d "${PREPAREDIR}" ]; then
   [ -e "${PREPAREDIR}" ] && error_mes "file" "${PREPAREDIR}"
-  echo "${bblue}[II] Creating directory '${PREPAREDIR}'"
+  echo -e "${bblue}[II] Creating directory '${PREPAREDIR}'${cclose}"
   mkdir -p "${PREPAREDIR}" || error_mes "unknown"
 fi
 if [ ! -d "${REPODIR}" ]; then
   [ -e "${REPODIR}" ] && error_mes "file" "${REPODIR}"
-  echo "${bblue}[II] Creating directory '${REPODIR}'"
+  echo -e "${bblue}[II] Creating directory '${REPODIR}'${cclose}"
   mkdir -p "${REPODIR}/"{i686,x86_64} || error_mes "unknown"
 fi
 if [ ! -d "${REPODIR}/i686" ]; then
   [ -e "${REPODIR}/i686" ] && error_mes "file" "${REPODIR}/i686"
-  echo "${bblue}[II] Creating directory '${REPODIR}/i686'"
+  echo -e "${bblue}[II] Creating directory '${REPODIR}/i686'${cclose}"
   mkdir -p "${REPODIR}/i686" || error_mes "unknown"
 fi
 if [ ! -d "${REPODIR}/x86_64" ]; then
   [ -e "${REPODIR}/x86_64" ] && error_mes "file" "${REPODIR}/x86_64"
-  echo "${bblue}[II] Creating directory '${REPODIR}/x86_64'"
+  echo -e "${bblue}[II] Creating directory '${REPODIR}/x86_64'${cclose}"
   mkdir -p "${REPODIR}/x86_64" || error_mes "unknown"
 fi
 if [ ! -d "${STAGINGDIR}" ]; then
   [ -e "${STAGINGDIR}" ] && error_mes "file" "${STAGINGDIR}"
-  echo "${bblue}[II] Creating directory '${STAGINGDIR}'"
+  echo -e "${bblue}[II] Creating directory '${STAGINGDIR}'${cclose}"
   mkdir -p "${STAGINGDIR}" || error_mes "unknown"
 fi
 
 
 ## work block
 # building
-echo "${bwhite}[II] Building packages"
+echo -e "${bwhite}[II] Building packages${cclose}"
 cd "${STAGINGDIR}"
 /usr/bin/find -name 'PKGBUILD' -type f -execdir /usr/bin/bash -c "func_build "${PREPAREDIR}" "${ROOTDIR}"" \;
 
 # signing
 if [ ${USEGPG} == "yes" ]; then
-  echo "${bwhite}[II] Signing"
+  echo -e "${bwhite}[II] Signing${cclose}"
   cd "${PREPAREDIR}"
   for PACKAGE in $(/usr/bin/find . -name '*.pkg.tar.xz'); do
     /usr/bin/gpg -b ${PACKAGE}
@@ -166,7 +172,7 @@ echo -e "[II] => i686 packages: \n${i686_PACKAGES}"
 echo -e "[II] => x86_64 packages: \n${x86_64_PACKAGES}"
 
 # updating i686 repo
-echo "${bwhite}[II] Updating i686 repo"
+echo -e "${bwhite}[II] Updating i686 repo${cclose}"
 cd "${REPODIR}/i686"
 for PACKAGE in ${i686_PACKAGES}; do
   PKGNAME=$(echo ${PACKAGE} | /usr/bin/awk -F '-' '{for(i=1; i<=NF-3;i++) {printf("%s-", $i);}}' | /usr/bin/sed 's/.$//')
@@ -178,7 +184,7 @@ for PACKAGE in ${i686_PACKAGES}; do
 done
 
 # updating x86_64 repo
-echo "${bwhite}[II] Updating x86_64 repo"
+echo -e "${bwhite}[II] Updating x86_64 repo${cclose}"
 cd "${REPODIR}/x86_64"
 for PACKAGE in ${x86_64_PACKAGES}; do
   PKGNAME=$(echo ${PACKAGE} | /usr/bin/awk -F '-' '{for(i=1; i<=NF-3;i++) {printf("%s-", $i);}}' | /usr/bin/sed 's/.$//')
@@ -190,7 +196,7 @@ for PACKAGE in ${x86_64_PACKAGES}; do
 done
 
 # clear
-echo "${bwhite}[II] Clear"
+echo -e "${bwhite}[II] Clear${cclose}"
 cd "${PREPAREDIR}"
 /usr/bin/rm -rf *
 cd "${STAGINGDIR}"
