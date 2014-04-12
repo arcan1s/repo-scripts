@@ -22,13 +22,14 @@
 error_mes() {
   if [ ${USECOLOR} == "yes" ]; then
     red='\e[0;31m'
+    bwhite='\e[1;37m'
     cclose='\e[0m'
   fi
   case "$1" in
-    "config"    ) echo "${red}[EE] Configuration file is not set${cclose}"                   ;;
-    "file"      ) echo "${red}[EE] '$2' is a file${cclose}"                                  ;;
-    "flag"      ) echo "${red}[EE] Unknown flag${cclose}"                                    ;;
-    "unknown"   ) echo "${red}[EE] Unknown error${cclose}"                                   ;;
+    "config"    ) echo "${red}[EE] ${bwhite}Configuration file is not set${cclose}"                   ;;
+    "file"      ) echo "${red}[EE] ${bwhite}'$2' is a file${cclose}"                                  ;;
+    "flag"      ) echo "${red}[EE] ${bwhite}Unknown flag${cclose}"                                    ;;
+    "unknown"   ) echo "${red}[EE] ${bwhite}Unknown error${cclose}"                                   ;;
   esac
   exit 1
 }
@@ -45,7 +46,7 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-update                                  "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.1.1                                                  License : GPLv3"
+  echo -e "Version : 1.1.2                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
@@ -60,18 +61,18 @@ func_build() {
   ROOT="$2"
   eval $(/usr/bin/grep 'arch=' PKGBUILD)
   if echo ${arch} | /usr/bin/grep any -q; then
-    /usr/bin/sudo /usr/bin/staging-i686-build -r "${ROOT}" -c
+    LC_MESSAGES=C /usr/bin/sudo /usr/bin/staging-i686-build -r "${ROOT}" -c
   else
     eval $(/usr/bin/grep 'pkgname=' PKGBUILD)
     if echo ${pkgname} | /usr/bin/grep lib32 -q; then
-      /usr/bin/sudo /usr/bin/multilib-staging-build -r "${ROOT}" -c
+      LC_MESSAGES=C /usr/bin/sudo /usr/bin/multilib-staging-build -r "${ROOT}" -c
     else
       if /usr/bin/grep "lib32" PKGBUILD -q; then
-        /usr/bin/sudo /usr/bin/staging-i686-build -r "${ROOT}" -c
-        /usr/bin/sudo /usr/bin/multilib-staging-build -r "${ROOT}" -c
+        LC_MESSAGES=C /usr/bin/sudo /usr/bin/staging-i686-build -r "${ROOT}" -c
+        LC_MESSAGES=C /usr/bin/sudo /usr/bin/multilib-staging-build -r "${ROOT}" -c
       else
-        /usr/bin/sudo /usr/bin/staging-i686-build -r "${ROOT}" -c
-        /usr/bin/sudo /usr/bin/staging-x86_64-build -r "${ROOT}" -c
+        LC_MESSAGES=C /usr/bin/sudo /usr/bin/staging-i686-build -r "${ROOT}" -c
+        LC_MESSAGES=C /usr/bin/sudo /usr/bin/staging-x86_64-build -r "${ROOT}" -c
       fi
     fi
   fi
@@ -124,40 +125,40 @@ export USECOLOR
 # error checking
 if [ ! -d "${PREPAREDIR}" ]; then
   [ -e "${PREPAREDIR}" ] && error_mes "file" "${PREPAREDIR}"
-  echo -e "${bblue}[II] Creating directory '${PREPAREDIR}'${cclose}"
+  echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${PREPAREDIR}'${cclose}"
   mkdir -p "${PREPAREDIR}" || error_mes "unknown"
 fi
 if [ ! -d "${REPODIR}" ]; then
   [ -e "${REPODIR}" ] && error_mes "file" "${REPODIR}"
-  echo -e "${bblue}[II] Creating directory '${REPODIR}'${cclose}"
+  echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${REPODIR}'${cclose}"
   mkdir -p "${REPODIR}/"{i686,x86_64} || error_mes "unknown"
 fi
 if [ ! -d "${REPODIR}/i686" ]; then
   [ -e "${REPODIR}/i686" ] && error_mes "file" "${REPODIR}/i686"
-  echo -e "${bblue}[II] Creating directory '${REPODIR}/i686'${cclose}"
+  echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${REPODIR}/i686'${cclose}"
   mkdir -p "${REPODIR}/i686" || error_mes "unknown"
 fi
 if [ ! -d "${REPODIR}/x86_64" ]; then
   [ -e "${REPODIR}/x86_64" ] && error_mes "file" "${REPODIR}/x86_64"
-  echo -e "${bblue}[II] Creating directory '${REPODIR}/x86_64'${cclose}"
+  echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${REPODIR}/x86_64'${cclose}"
   mkdir -p "${REPODIR}/x86_64" || error_mes "unknown"
 fi
 if [ ! -d "${STAGINGDIR}" ]; then
   [ -e "${STAGINGDIR}" ] && error_mes "file" "${STAGINGDIR}"
-  echo -e "${bblue}[II] Creating directory '${STAGINGDIR}'${cclose}"
+  echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${STAGINGDIR}'${cclose}"
   mkdir -p "${STAGINGDIR}" || error_mes "unknown"
 fi
 
 
 ## work block
 # building
-echo -e "${bwhite}[II] Building packages${cclose}"
+echo -e "${bwhite}[II]${cclose} Building packages"
 cd "${STAGINGDIR}"
 /usr/bin/find -name 'PKGBUILD' -type f -execdir /usr/bin/bash -c "func_build "${PREPAREDIR}" "${ROOTDIR}"" \;
 
 # signing
 if [ ${USEGPG} == "yes" ]; then
-  echo -e "${bwhite}[II] Signing${cclose}"
+  echo -e "${bwhite}[II]${cclose} Signing"
   cd "${PREPAREDIR}"
   for PACKAGE in $(/usr/bin/find . -name '*.pkg.tar.xz'); do
     /usr/bin/gpg -b ${PACKAGE}
@@ -168,11 +169,11 @@ fi
 cd "${PREPAREDIR}"
 i686_PACKAGES=$(/usr/bin/find * -name '*-i686.pkg.tar.xz' -o -name '*-any.pkg.tar.xz')
 x86_64_PACKAGES=$(/usr/bin/find * -name '*-x86_64.pkg.tar.xz' -o -name '*-any.pkg.tar.xz')
-echo -e "[II] => i686 packages: \n${i686_PACKAGES}"
-echo -e "[II] => x86_64 packages: \n${x86_64_PACKAGES}"
+echo -e "${bwhite}[II] ${bblue}=>${cclose} i686 packages: \n${bwhite}${i686_PACKAGES}${cclose}"
+echo -e "${bwhite}[II] ${bblue}=>${cclose} x86_64 packages: \n${bwhite}${x86_64_PACKAGES}${cclose}"
 
 # updating i686 repo
-echo -e "${bwhite}[II] Updating i686 repo${cclose}"
+echo -e "${bwhite}[II]${cclose} Updating ${bwhite}i686${cclose} repo"
 cd "${REPODIR}/i686"
 for PACKAGE in ${i686_PACKAGES}; do
   PKGNAME=$(echo ${PACKAGE} | /usr/bin/awk -F '-' '{for(i=1; i<=NF-3;i++) {printf("%s-", $i);}}' | /usr/bin/sed 's/.$//')
@@ -184,7 +185,7 @@ for PACKAGE in ${i686_PACKAGES}; do
 done
 
 # updating x86_64 repo
-echo -e "${bwhite}[II] Updating x86_64 repo${cclose}"
+echo -e "${bwhite}[II]${cclose} Updating ${bwhite}x86_64${cclose} repo"
 cd "${REPODIR}/x86_64"
 for PACKAGE in ${x86_64_PACKAGES}; do
   PKGNAME=$(echo ${PACKAGE} | /usr/bin/awk -F '-' '{for(i=1; i<=NF-3;i++) {printf("%s-", $i);}}' | /usr/bin/sed 's/.$//')
@@ -196,7 +197,7 @@ for PACKAGE in ${x86_64_PACKAGES}; do
 done
 
 # clear
-echo -e "${bwhite}[II] Clear${cclose}"
+echo -e "${bwhite}[II]${cclose} Clear"
 cd "${PREPAREDIR}"
 /usr/bin/rm -rf *
 cd "${STAGINGDIR}"

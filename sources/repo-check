@@ -22,13 +22,14 @@
 error_mes() {
   if [ ${USECOLOR} == "yes" ]; then
     red='\e[0;31m'
+    bwhite='\e[1;37m'
     cclose='\e[0m'
   fi
   case "$1" in
-    "config"    ) echo -e "${red}[EE] Configuration file is not set${cclose}"                   ;;
-    "file"      ) echo -e "${red}[EE] '$2' is a file${cclose}"                                  ;;
-    "flag"      ) echo -e "${red}[EE] Unknown flag${cclose}"                                    ;;
-    "unknown"   ) echo -e "${red}[EE] Unknown error${cclose}"                                   ;;
+    "config"    ) echo "${red}[EE] ${bwhite}Configuration file is not set${cclose}"                   ;;
+    "file"      ) echo "${red}[EE] ${bwhite}'$2' is a file${cclose}"                                  ;;
+    "flag"      ) echo "${red}[EE] ${bwhite}Unknown flag${cclose}"                                    ;;
+    "unknown"   ) echo "${red}[EE] ${bwhite}Unknown error${cclose}"                                   ;;
   esac
   exit 1
 }
@@ -45,7 +46,7 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-check                                   "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.1.1                                                  License : GPLv3"
+  echo -e "Version : 1.1.2                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   txit 0
@@ -54,14 +55,15 @@ func_update() {
   PKGNAME="$1"
   REPODIR="$2"
 
-  echo -e "${bwhite}[II] => Checking ${PKGNAME}${cclose}"
+  echo -e "${bwhite}[II] ${bblue}=>${cclose} Checking ${bwhite}${PKGNAME}${cclose}"
   echo ${PKGNAME} | /usr/bin/grep -q "\-bzr\|\-git\|\-svn" && return 1;
   PKGVER=$(/usr/bin/basename $(/usr/bin/find ${REPODIR} -name "${PKGNAME}*.pkg.tar.xz") | /usr/bin/awk -F '-' '{printf("%s-%s", $(NF-2), $(NF-1));}')
   NEWVER=$(/usr/bin/package-query -A -f %V "${PKGNAME}")
+  [ -z "${NEWVER}" ] && return 1
   if [ "${PKGVER}" = "${NEWVER}" ]; then
-    echo -e "${bgreen}[II] ${PKGNAME} is up-to-date${cclose}"
+    echo -e "${bwhite}[II] ${bgreen}${PKGNAME} is up-to-date${cclose}"
   else
-    echo -e "${bred}[II] ${PKGNAME} is out-of-date${cclose}"
+    echo -e "${bwhite}[II] ${bred}${PKGNAME} is out-of-date${cclose}"
     /usr/bin/yaourt -G aur/${PKGNAME} --noconfirm &> /dev/null
   fi
 }
@@ -108,22 +110,22 @@ export USECOLOR
 # error checking
 if [ ! -d "${REPODIR}" ]; then
   [ -e "${REPODIR}" ] && error_mes "file" "${REPODIR}"
-  echo -e "${bblue}[II] Creating directory '${REPODIR}'${cclose}"
+  echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${REPODIR}'${cclose}"
   mkdir -p "${REPODIR}/"{i686,x86_64} || error_mes "unknown"
 fi
 if [ ! -d "${REPODIR}/i686" ]; then
   [ -e "${REPODIR}/i686" ] && error_mes "file" "${REPODIR}/i686"
-  echo -e "${bblue}[II] Creating directory '${REPODIR}/i686'${cclose}"
+  echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${REPODIR}/i686'${cclose}"
   mkdir -p "${REPODIR}/i686" || error_mes "unknown"
 fi
 if [ ! -d "${REPODIR}/x86_64" ]; then
   [ -e "${REPODIR}/x86_64" ] && error_mes "file" "${REPODIR}/x86_64"
-  echo -e "${bblue}[II] Creating directory '${REPODIR}/x86_64'${cclose}"
+  echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${REPODIR}/x86_64'${cclose}"
   mkdir -p "${REPODIR}/x86_64" || error_mes "unknown"
 fi
 if [ ! -d "${STAGINGDIR}" ]; then
   [ -e "${STAGINGDIR}" ] && error_mes "file" "${STAGINGDIR}"
-  echo -e "${bblue}[II] Creating directory '${STAGINGDIR}'${cclose}"
+  echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${STAGINGDIR}'${cclose}"
   mkdir -p "${STAGINGDIR}" || error_mes "unknown"
 fi
 
@@ -131,7 +133,7 @@ fi
 ## work block
 IGNORELIST=$(echo "${IGNORELIST}" | sed "s/;;/\\\|/g")
 # get list
-echo -e "${bwhite}[II] Get list of packages${cclose}"
+echo -e "${bwhite}[II]${cclose} Get list of packages"
 /usr/bin/rm -f "${STAGINGDIR}/pkglist"
 cd "${REPODIR}/i686"
 /usr/bin/find . -name '*.pkg.tar.xz' | grep -v "$IGNORELIST" | cut -c 3- >> "${STAGINGDIR}/pkglist"
@@ -139,7 +141,7 @@ cd "${REPODIR}/x86_64"
 /usr/bin/find . -name '*.pkg.tar.xz' | grep -v "$IGNORELIST" | cut -c 3- >> "${STAGINGDIR}/pkglist"
 
 # work block
-echo -e "${bwhite}[II] Check packages${cclose}"
+echo -e "${bwhite}[II]${cclose} Check packages"
 cd "${STAGINGDIR}"
 for PACKAGE in $(cat pkglist); do
   PKGNAME=$(echo ${PACKAGE} | /usr/bin/awk -F '-' '{for(i=1; i<=NF-3;i++) {printf("%s-", $i);}}' | /usr/bin/sed 's/.$//')
@@ -148,7 +150,7 @@ done
 /usr/bin/rm -f "${STAGINGDIR}/pkglist"
 
 # check for updates
-echo -e "${bwhite}[II] Check for updates${cclose}"
+echo -e "${bwhite}[II]${cclose} Check for updates"
 cd "${STAGINGDIR}"
 if [[ $(find . -type d | wc -l) > 1 ]]; then
   /usr/bin/repo-update -c "${CONF_FILE}"
