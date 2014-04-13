@@ -57,7 +57,7 @@ func_update() {
 
   echo -e "${bwhite}[II] ${bblue}=>${cclose} Checking ${bwhite}${PKGNAME}${cclose}"
   echo ${PKGNAME} | /usr/bin/grep -q "\-bzr\|\-git\|\-svn" && return 1;
-  PKGVER=$(/usr/bin/basename $(/usr/bin/find ${REPODIR} -name "${PKGNAME}*.pkg.tar.xz") | /usr/bin/awk -F '-' '{printf("%s-%s", $(NF-2), $(NF-1));}')
+  PKGVER=$(/usr/bin/basename $(/usr/bin/find ${REPODIR}/{i686,x86_64} -name "${PKGNAME}*.pkg.tar.xz") | /usr/bin/awk -F '-' '{printf("%s-%s", $(NF-2), $(NF-1));}')
   NEWVER=$(/usr/bin/package-query -A -f %V "${PKGNAME}")
   [ -z "${NEWVER}" ] && return 1
   if [ "${PKGVER}" = "${NEWVER}" ]; then
