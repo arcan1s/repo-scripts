@@ -200,7 +200,6 @@ for PACKAGE in ${x86_64_PACKAGES}; do
   /usr/bin/find -name "${PKGNAME}"'*.pkg.tar.xz' -type f -exec /usr/bin/bash -c "func_remove "${PKGNAME}"" \;
   /usr/bin/cp "${PREPAREDIR}/${PACKAGE}" .
   [ ${USEGPG} == "yes" ] && /usr/bin/cp "${PREPAREDIR}/${PACKAGE}.sig" .
-  [ ${SYMLINK} == "yes" ] && /usr/bin/ln -sf "${PACKAGE}" "${PKGNAME}.pkg.tar.xz"
   /usr/bin/repo-add --new ${DBNAME}.db.tar.gz "${PACKAGE}"
   /usr/bin/repo-add --new --files ${DBNAME}.files.tar.gz "${PACKAGE}"
 done
