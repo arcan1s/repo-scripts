@@ -1,7 +1,7 @@
 # Maintainer: Evgeniy "arcanis" Alexeev <esalexeev@gmail.com>
 
 pkgname=repo-scripts
-pkgver=1.1.2
+pkgver=1.1.3
 pkgrel=1
 pkgdesc="A set of scripts to work with your repository"
 arch=('any')
@@ -9,7 +9,7 @@ url="https://github.com/arcan1s/repo-scripts"
 license=("GPLv3")
 depends=('bash')
 source=(https://github.com/arcan1s/repo-scripts/releases/download/V.${pkgver}/${pkgname}-${pkgver}-src.tar.xz)
-md5sums=('390e1f7aa19cce1411b2ee44cf57cde2')
+md5sums=('68045bd1e724cc647a8884f60b8ccc16')
 backup=('etc/repo-scripts.conf')
 
 package() {

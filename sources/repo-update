@@ -46,7 +46,7 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-update                                  "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.1.2                                                  License : GPLv3"
+  echo -e "Version : 1.1.3                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
@@ -57,17 +57,24 @@ func_remove() {
 }
 export -f func_remove
 func_build() {
+  if [ ${USECOLOR} == "yes" ]; then
+    bblue='\e[1;34m'
+    bwhite='\e[1;37m'
+    cclose='\e[0m'
+  fi
   PREPARE="$1"
   ROOT="$2"
   eval $(/usr/bin/grep 'arch=' PKGBUILD)
-  if echo ${arch} | /usr/bin/grep any -q; then
+  eval $(/usr/bin/grep 'pkgname=' PKGBUILD)
+  echo -e "${bwhite}[II] ${bblue}=>${cclose} Building ${bwhite}${pkgname}${cclose}"
+  if echo ${arch} | /usr/bin/grep 'any' -q; then
     LC_MESSAGES=C /usr/bin/sudo /usr/bin/staging-i686-build -r "${ROOT}" -c
   else
     eval $(/usr/bin/grep 'pkgname=' PKGBUILD)
     if echo ${pkgname} | /usr/bin/grep lib32 -q; then
       LC_MESSAGES=C /usr/bin/sudo /usr/bin/multilib-staging-build -r "${ROOT}" -c
     else
-      if /usr/bin/grep "lib32" PKGBUILD -q; then
+      if /usr/bin/grep 'lib32' PKGBUILD -q; then
         LC_MESSAGES=C /usr/bin/sudo /usr/bin/staging-i686-build -r "${ROOT}" -c
         LC_MESSAGES=C /usr/bin/sudo /usr/bin/multilib-staging-build -r "${ROOT}" -c
       else
@@ -97,6 +104,7 @@ PREPAREDIR="${HOME}/arch/prepare"
 REPODIR="${HOME}/arch/repo"
 ROOTDIR="${HOME}/arch/root"
 STAGINGDIR="${HOME}/arch/staging/"
+SYMLINK="no"
 USECOLOR="yes"
 USEGPG="yes"
 echo -e "[II] Reading configuration from '${CONF_FILE}'"
@@ -192,9 +200,29 @@ for PACKAGE in ${x86_64_PACKAGES}; do
   /usr/bin/find -name "${PKGNAME}"'*.pkg.tar.xz' -type f -exec /usr/bin/bash -c "func_remove "${PKGNAME}"" \;
   /usr/bin/cp "${PREPAREDIR}/${PACKAGE}" .
   [ ${USEGPG} == "yes" ] && /usr/bin/cp "${PREPAREDIR}/${PACKAGE}.sig" .
+  [ ${SYMLINK} == "yes" ] && /usr/bin/ln -sf "${PACKAGE}" "${PKGNAME}.pkg.tar.xz"
   /usr/bin/repo-add --new ${DBNAME}.db.tar.gz "${PACKAGE}"
   /usr/bin/repo-add --new --files ${DBNAME}.files.tar.gz "${PACKAGE}"
 done
+
+# creating symlinks
+if [ ${SYMLINK} == "yes" ]; then
+  echo -e "${bwhite}[II]${cclose} Creating symlinks"
+  if [ ! -d "${REPODIR}/non-versioned" ]; then
+    [ -e "${REPODIR}/non-versioned" ] && error_mes "file" "${REPODIR}/non-versioned"
+    echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${REPODIR}/non-versioned'${cclose}"
+    mkdir -p "${REPODIR}/non-versioned" || error_mes "unknown"
+  fi
+  cd "${REPODIR}/non-versioned"
+  for PACKAGE in ${i686_PACKAGES}; do
+    PKGNAME=$(echo ${PACKAGE} | /usr/bin/awk -F '-' '{for(i=1; i<=NF-3;i++) {printf("%s-", $i);}}' | /usr/bin/sed 's/.$//')
+    /usr/bin/ln -sf "../i686/${PACKAGE}" "${PKGNAME}-i686.pkg.tar.xz"
+  done
+  for PACKAGE in ${x86_64_PACKAGES}; do
+    PKGNAME=$(echo ${PACKAGE} | /usr/bin/awk -F '-' '{for(i=1; i<=NF-3;i++) {printf("%s-", $i);}}' | /usr/bin/sed 's/.$//')
+    /usr/bin/ln -sf "../x86_64/${PACKAGE}" "${PKGNAME}-x86_64.pkg.tar.xz"
+  done
+fi
 
 # clear
 echo -e "${bwhite}[II]${cclose} Clear"
