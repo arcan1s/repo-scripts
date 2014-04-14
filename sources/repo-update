@@ -46,16 +46,16 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-update                                  "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.1.3                                                  License : GPLv3"
+  echo -e "Version : 1.2.0                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
 }
 func_remove() {
-  PKGNAME="$1"
-  /usr/bin/rm -f ${PKGNAME}-[0-9]*
+  PACKAGE="$1"
+  REPODIR="$2"
+  /usr/bin/rm -f "${REPODIR}/${PACKAGE}"{,.sig}
 }
-export -f func_remove
 func_build() {
   if [ ${USECOLOR} == "yes" ]; then
     bblue='\e[1;34m'
@@ -184,8 +184,8 @@ echo -e "${bwhite}[II] ${bblue}=>${cclose} x86_64 packages: \n${bwhite}${x86_64_
 echo -e "${bwhite}[II]${cclose} Updating ${bwhite}i686${cclose} repo"
 cd "${REPODIR}/i686"
 for PACKAGE in ${i686_PACKAGES}; do
-  PKGNAME=$(echo ${PACKAGE} | /usr/bin/awk -F '-' '{for(i=1; i<=NF-3;i++) {printf("%s-", $i);}}' | /usr/bin/sed 's/.$//')
-  /usr/bin/find -name "${PKGNAME}*.pkg.tar.xz" -type f -exec /usr/bin/bash -c "func_remove "${PKGNAME}"" \;
+  PKGNAME=$(/usr/bin/package-query -p -f %n "${REPODIR}/i686/${PACKAGE}")
+  func_remove "${PACKAGE}" "${REPODIR}/i686"
   /usr/bin/cp "${PREPAREDIR}/${PACKAGE}" .
   [ ${USEGPG} == "yes" ] && /usr/bin/cp "${PREPAREDIR}/${PACKAGE}.sig" .
   /usr/bin/repo-add ${DBNAME}.db.tar.gz "${PACKAGE}"
@@ -196,8 +196,8 @@ done
 echo -e "${bwhite}[II]${cclose} Updating ${bwhite}x86_64${cclose} repo"
 cd "${REPODIR}/x86_64"
 for PACKAGE in ${x86_64_PACKAGES}; do
-  PKGNAME=$(echo ${PACKAGE} | /usr/bin/awk -F '-' '{for(i=1; i<=NF-3;i++) {printf("%s-", $i);}}' | /usr/bin/sed 's/.$//')
-  /usr/bin/find -name "${PKGNAME}"'*.pkg.tar.xz' -type f -exec /usr/bin/bash -c "func_remove "${PKGNAME}"" \;
+  PKGNAME=$(/usr/bin/package-query -p -f %n "${REPODIR}/x86_64/${PACKAGE}")
+  func_remove "${PACKAGE}" "${REPODIR}/x86_64"
   /usr/bin/cp "${PREPAREDIR}/${PACKAGE}" .
   [ ${USEGPG} == "yes" ] && /usr/bin/cp "${PREPAREDIR}/${PACKAGE}.sig" .
   /usr/bin/repo-add ${DBNAME}.db.tar.gz "${PACKAGE}"
@@ -214,11 +214,11 @@ if [ ${SYMLINK} == "yes" ]; then
   fi
   cd "${REPODIR}/non-versioned"
   for PACKAGE in ${i686_PACKAGES}; do
-    PKGNAME=$(echo ${PACKAGE} | /usr/bin/awk -F '-' '{for(i=1; i<=NF-3;i++) {printf("%s-", $i);}}' | /usr/bin/sed 's/.$//')
+    PKGNAME=$(/usr/bin/package-query -p -f %n "${REPODIR}/i686/${PACKAGE}")
     /usr/bin/ln -sf "../i686/${PACKAGE}" "${PKGNAME}-i686.pkg.tar.xz"
   done
   for PACKAGE in ${x86_64_PACKAGES}; do
-    PKGNAME=$(echo ${PACKAGE} | /usr/bin/awk -F '-' '{for(i=1; i<=NF-3;i++) {printf("%s-", $i);}}' | /usr/bin/sed 's/.$//')
+    PKGNAME=$(/usr/bin/package-query -p -f %n "${REPODIR}/x86_64/${PACKAGE}")
     /usr/bin/ln -sf "../x86_64/${PACKAGE}" "${PKGNAME}-x86_64.pkg.tar.xz"
   done
 fi

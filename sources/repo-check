@@ -46,18 +46,18 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-check                                   "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.1.3                                                  License : GPLv3"
+  echo -e "Version : 1.2.0                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
-  txit 0
+  exit 0
 }
 func_update() {
   PKGNAME="$1"
-  REPODIR="$2"
+  PKGVER="$2"
+  REPODIR="$3"
 
   echo -e "${bwhite}[II] ${bblue}=>${cclose} Checking ${bwhite}${PKGNAME}${cclose}"
   echo ${PKGNAME} | /usr/bin/grep -q "\-bzr\|\-git\|\-svn" && return 1;
-  PKGVER=$(/usr/bin/basename $(/usr/bin/find ${REPODIR}/{i686,x86_64} -name "${PKGNAME}*.pkg.tar.xz") | /usr/bin/awk -F '-' '{printf("%s-%s", $(NF-2), $(NF-1));}')
   NEWVER=$(/usr/bin/package-query -A -f %V "${PKGNAME}")
   [ -z "${NEWVER}" ] && return 1
   if [ "${PKGVER}" = "${NEWVER}" ]; then
@@ -144,8 +144,14 @@ cd "${REPODIR}/x86_64"
 echo -e "${bwhite}[II]${cclose} Check packages"
 cd "${STAGINGDIR}"
 for PACKAGE in $(cat pkglist); do
-  PKGNAME=$(echo ${PACKAGE} | /usr/bin/awk -F '-' '{for(i=1; i<=NF-3;i++) {printf("%s-", $i);}}' | /usr/bin/sed 's/.$//')
-  func_update "${PKGNAME}" "${REPODIR}"
+  if echo "${PACKAGE}" | grep -q "\-i686.pkg.tar.xz\|\-any.pkg.tar.xz"; then
+    PKGNAME=$(/usr/bin/package-query -p -f %n "${REPODIR}/i686/${PACKAGE}")
+    PKGVER=$(/usr/bin/package-query -p -f %V "${REPODIR}/i686/${PACKAGE}")
+  else
+    PKGNAME=$(/usr/bin/package-query -p -f %n "${REPODIR}/x86_64/${PACKAGE}")
+    PKGVER=$(/usr/bin/package-query -p -f %V "${REPODIR}/x86_64/${PACKAGE}")
+  fi
+  func_update "${PKGNAME}" "${PKGVER}" "${REPODIR}"
 done
 /usr/bin/rm -f "${STAGINGDIR}/pkglist"
 
