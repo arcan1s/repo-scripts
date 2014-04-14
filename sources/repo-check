@@ -67,7 +67,7 @@ func_update() {
   echo ${_PKGNAME} | /usr/bin/grep -q "\-bzr\|\-git\|\-svn" && return 1;
   NEWVER=$(/usr/bin/package-query -A -f %V "${_PKGNAME}")
   [ -z "${NEWVER}" ] && return 1
-  if [ "${_PKGVER}" = "${NEWVER}" ]; then
+  if [ "${_PKGVER}" == "${NEWVER}" ]; then
     echo -e "${_bwhite}[II] ${_bgreen}${_PKGNAME} is up-to-date${_cclose}"
   else
     echo -e "${_bwhite}[II] ${_bred}${_PKGNAME} is out-of-date${_cclose}"
