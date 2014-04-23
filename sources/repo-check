@@ -113,6 +113,16 @@ if [ ! -d "${REPODIR}" ]; then
   echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${REPODIR}'${cclose}"
   /usr/bin/mkdir -p "${REPODIR}/"{i686,x86_64} || error_mes "unknown"
 fi
+if [ ! -d "${REPODIR}/i686" ]; then
+  [ -e "${REPODIR}/i686" ] && error_mes "file" "${REPODIR}/i686"
+  echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${REPODIR}/i686'${cclose}"
+  /usr/bin/mkdir -p "${REPODIR}/i686" || error_mes "unknown"
+fi
+if [ ! -d "${REPODIR}/x86_64" ]; then
+  [ -e "${REPODIR}/x86_64" ] && error_mes "file" "${REPODIR}/x86_64"
+  echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${REPODIR}/x86_64'${cclose}"
+  /usr/bin/mkdir -p "${REPODIR}/x86_64" || error_mes "unknown"
+fi
 if [ ! -d "${STAGINGDIR}" ]; then
   [ -e "${STAGINGDIR}" ] && error_mes "file" "${STAGINGDIR}"
   echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${STAGINGDIR}'${cclose}"
