@@ -46,7 +46,7 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-update                                  "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.2.3                                                  License : GPLv3"
+  echo -e "Version : 1.2.4                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
@@ -119,27 +119,27 @@ export USECOLOR
 if [ ! -d "${PREPAREDIR}" ]; then
   [ -e "${PREPAREDIR}" ] && error_mes "file" "${PREPAREDIR}"
   echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${PREPAREDIR}'${cclose}"
-  mkdir -p "${PREPAREDIR}" || error_mes "unknown"
+  /usr/bin/mkdir -p "${PREPAREDIR}" || error_mes "unknown"
 fi
 if [ ! -d "${REPODIR}" ]; then
   [ -e "${REPODIR}" ] && error_mes "file" "${REPODIR}"
   echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${REPODIR}'${cclose}"
-  mkdir -p "${REPODIR}/"{i686,x86_64} || error_mes "unknown"
+  /usr/bin/mkdir -p "${REPODIR}/"{i686,x86_64} || error_mes "unknown"
 fi
 if [ ! -d "${REPODIR}/i686" ]; then
   [ -e "${REPODIR}/i686" ] && error_mes "file" "${REPODIR}/i686"
   echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${REPODIR}/i686'${cclose}"
-  mkdir -p "${REPODIR}/i686" || error_mes "unknown"
+  /usr/bin/mkdir -p "${REPODIR}/i686" || error_mes "unknown"
 fi
 if [ ! -d "${REPODIR}/x86_64" ]; then
   [ -e "${REPODIR}/x86_64" ] && error_mes "file" "${REPODIR}/x86_64"
   echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${REPODIR}/x86_64'${cclose}"
-  mkdir -p "${REPODIR}/x86_64" || error_mes "unknown"
+  /usr/bin/mkdir -p "${REPODIR}/x86_64" || error_mes "unknown"
 fi
 if [ ! -d "${STAGINGDIR}" ]; then
   [ -e "${STAGINGDIR}" ] && error_mes "file" "${STAGINGDIR}"
   echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${STAGINGDIR}'${cclose}"
-  mkdir -p "${STAGINGDIR}" || error_mes "unknown"
+  /usr/bin/mkdir -p "${STAGINGDIR}" || error_mes "unknown"
 fi
 
 
@@ -201,7 +201,7 @@ if [ ${SYMLINK} == "yes" ]; then
   if [ ! -d "${REPODIR}/non-versioned" ]; then
     [ -e "${REPODIR}/non-versioned" ] && error_mes "file" "${REPODIR}/non-versioned"
     echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${REPODIR}/non-versioned'${cclose}"
-    mkdir -p "${REPODIR}/non-versioned" || error_mes "unknown"
+    /usr/bin/mkdir -p "${REPODIR}/non-versioned" || error_mes "unknown"
   fi
   cd "${REPODIR}/non-versioned"
   for PACKAGE in ${i686_PACKAGES}; do

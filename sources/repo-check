@@ -46,7 +46,7 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-check                                   "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.2.3                                                  License : GPLv3"
+  echo -e "Version : 1.2.4                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
@@ -111,22 +111,12 @@ export USECOLOR
 if [ ! -d "${REPODIR}" ]; then
   [ -e "${REPODIR}" ] && error_mes "file" "${REPODIR}"
   echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${REPODIR}'${cclose}"
-  mkdir -p "${REPODIR}/"{i686,x86_64} || error_mes "unknown"
-fi
-if [ ! -d "${REPODIR}/i686" ]; then
-  [ -e "${REPODIR}/i686" ] && error_mes "file" "${REPODIR}/i686"
-  echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${REPODIR}/i686'${cclose}"
-  mkdir -p "${REPODIR}/i686" || error_mes "unknown"
-fi
-if [ ! -d "${REPODIR}/x86_64" ]; then
-  [ -e "${REPODIR}/x86_64" ] && error_mes "file" "${REPODIR}/x86_64"
-  echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${REPODIR}/x86_64'${cclose}"
-  mkdir -p "${REPODIR}/x86_64" || error_mes "unknown"
+  /usr/bin/mkdir -p "${REPODIR}/"{i686,x86_64} || error_mes "unknown"
 fi
 if [ ! -d "${STAGINGDIR}" ]; then
   [ -e "${STAGINGDIR}" ] && error_mes "file" "${STAGINGDIR}"
   echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${STAGINGDIR}'${cclose}"
-  mkdir -p "${STAGINGDIR}" || error_mes "unknown"
+  /usr/bin/mkdir -p "${STAGINGDIR}" || error_mes "unknown"
 fi
 
 
@@ -139,15 +129,15 @@ echo -e "${bwhite}[II]${cclose} Updating local database"
 echo -e "${bwhite}[II]${cclose} Getting list of packages"
 /usr/bin/rm -f "${STAGINGDIR}/pkglist"
 cd "${REPODIR}/i686"
-/usr/bin/find . -name '*.pkg.tar.xz' | grep -v "$IGNORELIST" | cut -c 3- >> "${STAGINGDIR}/pkglist"
+/usr/bin/find . -name '*.pkg.tar.xz' | /usr/bin/grep -v "$IGNORELIST" | /usr/bin/cut -c 3- >> "${STAGINGDIR}/pkglist"
 cd "${REPODIR}/x86_64"
-/usr/bin/find . -name '*.pkg.tar.xz' | grep -v "$IGNORELIST" | cut -c 3- >> "${STAGINGDIR}/pkglist"
+/usr/bin/find . -name '*.pkg.tar.xz' | /usr/bin/grep -v "$IGNORELIST" | /usr/bin/cut -c 3- >> "${STAGINGDIR}/pkglist"
 
 # work block
 echo -e "${bwhite}[II]${cclose} Checking packages"
 cd "${STAGINGDIR}"
-for PACKAGE in $(cat pkglist); do
-  if echo "${PACKAGE}" | grep -q "\-i686.pkg.tar.xz\|\-any.pkg.tar.xz"; then
+for PACKAGE in $(/usr/bin/cat pkglist); do
+  if echo "${PACKAGE}" | /usr/bin/grep -q "\-i686.pkg.tar.xz\|\-any.pkg.tar.xz"; then
     PKGNAME=$(/usr/bin/package-query -p -f %n "${REPODIR}/i686/${PACKAGE}")
     PKGVER=$(/usr/bin/package-query -p -f %V "${REPODIR}/i686/${PACKAGE}")
   else
@@ -161,6 +151,6 @@ done
 # check for updates
 echo -e "${bwhite}[II]${cclose} Check for updates"
 cd "${STAGINGDIR}"
-if [[ $(find . -type d | wc -l) > 1 ]]; then
+if [[ $(/usr/bin/find . -type d | /usr/bin/wc -l) > 1 ]]; then
   /usr/bin/repo-update -c "${CONF_FILE}"
 fi
