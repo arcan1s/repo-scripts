@@ -46,7 +46,7 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-check                                   "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.2.5                                                  License : GPLv3"
+  echo -e "Version : 1.2.6                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
@@ -65,7 +65,7 @@ func_update() {
   _REPODIR="$3"
 
   echo -e "${_bwhite}[II] ${_bblue}=>${_cclose} Checking ${_bwhite}${_PKGNAME}${_cclose}"
-  if echo ${_PKGNAME} | /usr/bin/grep -q "\-bzr\|\-git\|\-svn\|\-hg"; then
+  if [[ "${_PKGNAME}" =~ -bzr-|-git-|-hg-|-svn- ]]; then
     echo -e "${_bwhite}[II] ${_byellow}${_PKGNAME} is VCS package${_cclose}"
     return 1
   fi
@@ -147,7 +147,7 @@ cd "${REPODIR}/x86_64"
 echo -e "${bwhite}[II]${cclose} Checking packages"
 cd "${STAGINGDIR}"
 for PACKAGE in $(/usr/bin/cat pkglist); do
-  if echo "${PACKAGE}" | /usr/bin/grep -q "\-i686.pkg.tar.xz\|\-any.pkg.tar.xz"; then
+  if [[ "${PACKAGE}" =~ -i686.pkg.tar.xz$|-any.pkg.tar.xz$ ]]; then
     PKGNAME=$(/usr/bin/package-query -p -f %n "${REPODIR}/i686/${PACKAGE}")
     PKGVER=$(/usr/bin/package-query -p -f %V "${REPODIR}/i686/${PACKAGE}")
   else

@@ -46,7 +46,7 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-update                                  "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.2.5                                                  License : GPLv3"
+  echo -e "Version : 1.2.6                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
@@ -66,11 +66,11 @@ func_build() {
   eval $(/usr/bin/grep 'arch=' PKGBUILD)
   eval $(/usr/bin/grep 'pkgname=' PKGBUILD)
   echo -e "${_bwhite}[II] ${_bblue}=>${_cclose} Building ${_bwhite}${pkgname}${_cclose}"
-  if echo ${arch} | /usr/bin/grep 'any' -q; then
+  if [[ "${arch}" =~ any ]]; then
     LC_MESSAGES=C /usr/bin/sudo /usr/bin/staging-i686-build -r "${_ROOTDIR}" -c
   else
     eval $(/usr/bin/grep 'pkgname=' PKGBUILD)
-    if echo ${pkgname} | /usr/bin/grep lib32 -q; then
+    if [[ "${pkgname}" =~ lib32 ]]; then
       LC_MESSAGES=C /usr/bin/sudo /usr/bin/multilib-staging-build -r "${_ROOTDIR}" -c
     else
       if /usr/bin/grep 'lib32' PKGBUILD -q; then
