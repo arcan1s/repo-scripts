@@ -65,7 +65,7 @@ func_update() {
   _REPODIR="$3"
 
   echo -e "${_bwhite}[II] ${_bblue}=>${_cclose} Checking ${_bwhite}${_PKGNAME}${_cclose}"
-  if [[ "${_PKGNAME}" =~ -bzr-|-git-|-hg-|-svn- ]]; then
+  if [[ "${_PKGNAME}" =~ -bzr|-git|-hg|-svn ]]; then
     echo -e "${_bwhite}[II] ${_byellow}${_PKGNAME} is VCS package${_cclose}"
     return 1
   fi
