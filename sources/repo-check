@@ -46,7 +46,7 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-check                                   "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.2.6                                                  License : GPLv3"
+  echo -e "Version : 1.2.7                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
@@ -74,12 +74,12 @@ func_update() {
     echo -e "${_bwhite}[II] ${_byellow}${_PKGNAME} is not found${_cclose}"
     return 1
   fi
-  if [ "${_PKGVER}" == "${NEWVER}" ]; then
-    echo -e "${_bwhite}[II] ${_bgreen}${_PKGNAME} is up-to-date${_cclose}"
-  else
-    echo -e "${_bwhite}[II] ${_bred}${_PKGNAME} is out-of-date${_cclose}"
-    /usr/bin/yaourt -G aur/${_PKGNAME} --noconfirm &> /dev/null
-  fi
+  case "$(/usr/bin/vercmp ${_PKGVER} ${NEWVER})" in
+    "0"  ) echo -e "${_bwhite}[II] ${_bgreen}${_PKGNAME} is up-to-date${_cclose}"     ;;
+    "-1" ) echo -e "${_bwhite}[II] ${_bred}${_PKGNAME} is out-of-date${_cclose}" && \
+           /usr/bin/yaourt -G aur/${_PKGNAME} --noconfirm &> /dev/null                ;;
+    "1"  ) echo -e "${_bwhite}[II] ${_byellow}${_PKGNAME} is newer than in AUR${_cclose}"     ;;
+  esac
 }
 
 CONF_FILE="/etc/repo-scripts.conf"
