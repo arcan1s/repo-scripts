@@ -28,15 +28,16 @@ error_mes() {
   case "$1" in
     "config"    ) echo "${_red}[EE] ${_bwhite}Configuration file is not set${_cclose}"                   ;;
     "file"      ) echo "${_red}[EE] ${_bwhite}'$2' is a file${_cclose}"                                  ;;
-    "flag"      ) echo "${_red}[EE] ${_bwhite}Unknown flag${_cclose}"                                    ;;
     "unknown"   ) echo "${_red}[EE] ${_bwhite}Unknown error${_cclose}"                                   ;;
   esac
   exit 1
 }
 func_help() {
-  echo -e "Script written on BASH for checking packages for updates"
-  echo -e "\nUsage: repo-check [ -c /etc/repo-scripts.conf ] [ -v | --version ] [ -h | --help ]"
+  echo -e "Script written on BASH to clear packages from custom repository"
+  echo -e "\nUsage: repo-clear [ -c /etc/repo-scripts.conf ] [ -v | --version ] [ -h | --help ]"
+  echo -e "                  PACKAGE1 PACKAGE2 ..."
   echo -e "\nParametrs:"
+  echo -e "  PACKAGE1 PACKAGE2 ...     - packaes to removal"
   echo -e "  -c               PATH     - path to configuration file. Default is
                               '/etc/repo-scripts.conf'"
   echo -e "\n  -v   --version            - show version and exit"
@@ -44,59 +45,34 @@ func_help() {
   exit 0
 }
 func_ver() {
-  echo -e "                                   repo-check                                   "
+  echo -e "                                   repo-clear                                   "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.3.0                                                  License : GPLv3"
+  echo -e "Version : 1.2.7                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
 }
-func_update() {
-  if [ ${USECOLOR} == "yes" ]; then
-    _bred='\e[1;31m'
-    _bgreen='\e[1;32m'
-    _byellow='\e[1;33m'
-    _bblue='\e[1;34m'
-    _bwhite='\e[1;37m'
-    _cclose='\e[0m'
-  fi
-  _PKGNAME="$1"
-  _PKGVER="$2"
-  _REPODIR="$3"
-
-  echo -e "${_bwhite}[II] ${_bblue}=>${_cclose} Checking ${_bwhite}${_PKGNAME}${_cclose}"
-  if [[ "${_PKGNAME}" =~ -bzr|-git|-hg|-svn ]]; then
-    echo -e "${_bwhite}[II] ${_byellow}${_PKGNAME} is VCS package${_cclose}"
-    return 1
-  fi
-  NEWVER=$(/usr/bin/package-query -A -f %V "${_PKGNAME}")
-  if [ -z "${NEWVER}" ]; then
-    echo -e "${_bwhite}[II] ${_byellow}${_PKGNAME} is not found${_cclose}"
-    return 1
-  fi
-  case "$(/usr/bin/vercmp ${_PKGVER} ${NEWVER})" in
-    "0"  ) echo -e "${_bwhite}[II] ${_bgreen}${_PKGNAME} is up-to-date${_cclose}"     ;;
-    "-1" ) echo -e "${_bwhite}[II] ${_bred}${_PKGNAME} is out-of-date${_cclose}" && \
-           /usr/bin/yaourt -G aur/${_PKGNAME} --noconfirm &> /dev/null                ;;
-    "1"  ) echo -e "${_bwhite}[II] ${_byellow}${_PKGNAME} is newer than in AUR${_cclose}"     ;;
-  esac
+func_remove() {
+  _PACKAGE="$1"
+  /usr/bin/rm -f "${_PACKAGE}"{,.sig}
 }
 
 CONF_FILE="/etc/repo-scripts.conf"
+PKGLIST=()
 # parametrs parsing
 until [ -z $1 ]; do
   case "$1" in
     "-h" | "--help"    ) func_help                                                    ;;
     "-v" | "--version" ) func_ver                                                     ;;
     "-c"               ) [ -z "$2" ] && error_mes "config" || CONF_FILE="$2" && shift ;;
-    *                  ) error_mes "flag"                                             ;;
+    *                  ) PKGLIST+=("$1")                                              ;;
   esac
   shift
 done
 # default values
-IGNORELIST=""
+DBNAME="custom"
 REPODIR="${HOME}/arch/repo"
-STAGINGDIR="${HOME}/arch/staging/"
+SYMLINK="no"
 USECOLOR="yes"
 echo -e "[II] Reading configuration from '${CONF_FILE}'"
 . "${CONF_FILE}"
@@ -123,44 +99,33 @@ if [ ! -d "${REPODIR}/x86_64" ]; then
   echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${REPODIR}/x86_64'${cclose}"
   /usr/bin/mkdir -p "${REPODIR}/x86_64" || error_mes "unknown"
 fi
-if [ ! -d "${STAGINGDIR}" ]; then
-  [ -e "${STAGINGDIR}" ] && error_mes "file" "${STAGINGDIR}"
-  echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${STAGINGDIR}'${cclose}"
-  /usr/bin/mkdir -p "${STAGINGDIR}" || error_mes "unknown"
-fi
 
 
 ## work block
-IGNORELIST=$(echo "${IGNORELIST}" | sed "s/;;/\\\|/g")
-# update database
-echo -e "${bwhite}[II]${cclose} Updating local database"
-/usr/bin/yaourt -Sy
-# get list
-echo -e "${bwhite}[II]${cclose} Getting list of packages"
-/usr/bin/rm -f "${STAGINGDIR}/pkglist"
-cd "${REPODIR}/i686"
-/usr/bin/find . -name '*.pkg.tar.xz' | /usr/bin/grep -v "$IGNORELIST" | /usr/bin/cut -c 3- >> "${STAGINGDIR}/pkglist"
-cd "${REPODIR}/x86_64"
-/usr/bin/find . -name '*.pkg.tar.xz' | /usr/bin/grep -v "$IGNORELIST" | /usr/bin/cut -c 3- >> "${STAGINGDIR}/pkglist"
-
-# work block
-echo -e "${bwhite}[II]${cclose} Checking packages"
-cd "${STAGINGDIR}"
-for PACKAGE in $(/usr/bin/cat pkglist); do
-  if [[ "${PACKAGE}" =~ -i686.pkg.tar.xz$|-any.pkg.tar.xz$ ]]; then
-    PKGNAME=$(/usr/bin/package-query -p -f %n "${REPODIR}/i686/${PACKAGE}")
-    PKGVER=$(/usr/bin/package-query -p -f %V "${REPODIR}/i686/${PACKAGE}")
-  else
-    PKGNAME=$(/usr/bin/package-query -p -f %n "${REPODIR}/x86_64/${PACKAGE}")
-    PKGVER=$(/usr/bin/package-query -p -f %V "${REPODIR}/x86_64/${PACKAGE}")
-  fi
-  func_update "${PKGNAME}" "${PKGVER}" "${REPODIR}"
+for ARCH in i686 x86_64; do
+  echo -e "${bwhite}[II]${cclose} Clear ${bwhite}${ARCH}${cclose} repo"
+  cd "${REPODIR}/${ARCH}"
+  for PKGNAME in ${PKGLIST[@]}; do
+    echo -e "${bwhite}[II]${cclose} Removal package ${bwhite}${PKGNAME}${cclose} from ${bwhite}${ARCH}${cclose} repo"
+    for PKG in $(/usr/bin/find . -name "${PKGNAME}"'*.pkg.tar.xz'); do
+      _PKGNAME=$(/usr/bin/package-query -p -f %n "${PKG}")
+      if [ "${PKGNAME}" == "${_PKGNAME}" ]; then
+        /usr/bin/rm -f "${PKG}"{,.sig}
+        /usr/bin/repo-remove "${DBNAME}.db.tar.gz" "${PKGNAME}"
+        /usr/bin/repo-remove "${DBNAME}.files.tar.gz" "${PKGNAME}"
+      fi
+    done
+  done
 done
-/usr/bin/rm -f "${STAGINGDIR}/pkglist"
 
-# check for updates
-echo -e "${bwhite}[II]${cclose} Check for updates"
-cd "${STAGINGDIR}"
-if [[ $(/usr/bin/find . -type d | /usr/bin/wc -l) > 1 ]]; then
-  /usr/bin/repo-update -c "${CONF_FILE}"
+# clear broken symlinks
+if [ "${SYMLINK}" == "yes" ]; then
+  echo -e "${bwhite}[II]${cclose} Clear broken symlinks"
+  if [ ! -d "${REPODIR}/non-versioned" ]; then
+    [ -e "${REPODIR}/non-versioned" ] && error_mes "file" "${REPODIR}/non-versioned"
+    echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${REPODIR}/non-versioned'${cclose}"
+    /usr/bin/mkdir -p "${REPODIR}/non-versioned" || error_mes "unknown"
+  fi
+  cd "${REPODIR}/non-versioned"
+  /usr/bin/find . -type \l -xtype \l -exec /usr/bin/rm {} \;
 fi

@@ -11,6 +11,7 @@ func_error() {
 cd "$(dirname "${BASH_SOURCE[0]}")"
 # daemon and configuration
 install -D -m755 "usr/bin/repo-check" "$DESTDIR/usr/bin/repo-check" || func_error
+install -D -m755 "usr/bin/repo-clear" "$DESTDIR/usr/bin/repo-clear" || func_error
 install -D -m755 "usr/bin/repo-update" "$DESTDIR/usr/bin/repo-update" || func_error
 install -D -m644 "etc/repo-scripts.conf" "$DESTDIR/etc/repo-scripts.conf" || func_error
 

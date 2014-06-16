@@ -46,7 +46,7 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-update                                  "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.2.7                                                  License : GPLv3"
+  echo -e "Version : 1.3.0                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
@@ -150,11 +150,11 @@ cd "${STAGINGDIR}"
 /usr/bin/find -name 'PKGBUILD' -type f -execdir /usr/bin/bash -c "func_build "${PREPAREDIR}" "${ROOTDIR}"" \;
 
 # signing
-if [ ${USEGPG} == "yes" ]; then
+if [ "${USEGPG}" == "yes" ]; then
   echo -e "${bwhite}[II]${cclose} Signing"
   cd "${PREPAREDIR}"
   for PACKAGE in $(/usr/bin/find . -name '*.pkg.tar.xz'); do
-    /usr/bin/gpg -b ${PACKAGE}
+    /usr/bin/gpg -b "${PACKAGE}"
   done
 fi
 
@@ -165,38 +165,25 @@ x86_64_PACKAGES=$(/usr/bin/find * -name '*-x86_64.pkg.tar.xz' -o -name '*-any.pk
 echo -e "${bwhite}[II] ${bblue}=>${cclose} i686 packages: \n${bwhite}${i686_PACKAGES}${cclose}"
 echo -e "${bwhite}[II] ${bblue}=>${cclose} x86_64 packages: \n${bwhite}${x86_64_PACKAGES}${cclose}"
 
-# updating i686 repo
-echo -e "${bwhite}[II]${cclose} Updating ${bwhite}i686${cclose} repo"
-cd "${REPODIR}/i686"
-for PACKAGE in ${i686_PACKAGES}; do
-  PKGNAME=$(/usr/bin/package-query -p -f %n "${PREPAREDIR}/${PACKAGE}")
-  for PKG in $(/usr/bin/find "${REPODIR}/i686" -name "${PKGNAME}"'*.pkg.tar.xz'); do
-    _PKGNAME=$(/usr/bin/package-query -p -f %n "${PKG}")
-    [ "${PKGNAME}" == "${_PKGNAME}" ] && func_remove "${PKG}"
+for ARCH in i686 x86_64; do
+  echo -e "${bwhite}[II]${cclose} Updating ${bwhite}${ARCH}${cclose} repo"
+  cd "${REPODIR}/${ARCH}"
+  [ "${ARCH}" == "i686" ] && PKGLIST="${i686_PACKAGES}" || PKGLIST="${x86_64_PACKAGES}"
+  for PACKAGE in ${PKGLIST}; do
+    PKGNAME=$(/usr/bin/package-query -p -f %n "${PREPAREDIR}/${PACKAGE}")
+    for PKG in $(/usr/bin/find . -name "${PKGNAME}"'*.pkg.tar.xz'); do
+      _PKGNAME=$(/usr/bin/package-query -p -f %n "${PKG}")
+      [ "${PKGNAME}" == "${_PKGNAME}" ] && func_remove "${PKG}"
+    done
+    /usr/bin/cp "${PREPAREDIR}/${PACKAGE}" .
+    [ "${USEGPG}" == "yes" ] && /usr/bin/cp "${PREPAREDIR}/${PACKAGE}.sig" .
+    /usr/bin/repo-add "${DBNAME}.db.tar.gz" "${PACKAGE}"
+    /usr/bin/repo-add --files "${DBNAME}.files.tar.gz" "${PACKAGE}"
   done
-  /usr/bin/cp "${PREPAREDIR}/${PACKAGE}" .
-  [ ${USEGPG} == "yes" ] && /usr/bin/cp "${PREPAREDIR}/${PACKAGE}.sig" .
-  /usr/bin/repo-add ${DBNAME}.db.tar.gz "${PACKAGE}"
-  /usr/bin/repo-add --files ${DBNAME}.files.tar.gz "${PACKAGE}"
-done
-
-# updating x86_64 repo
-echo -e "${bwhite}[II]${cclose} Updating ${bwhite}x86_64${cclose} repo"
-cd "${REPODIR}/x86_64"
-for PACKAGE in ${x86_64_PACKAGES}; do
-  PKGNAME=$(/usr/bin/package-query -p -f %n "${PREPAREDIR}/${PACKAGE}")
-  for PKG in $(/usr/bin/find "${REPODIR}/x86_64" -name "${PKGNAME}"'*.pkg.tar.xz'); do
-    _PKGNAME=$(/usr/bin/package-query -p -f %n "${PKG}")
-    [ "${PKGNAME}" == "${_PKGNAME}" ] && func_remove "${PKG}"
-  done
-  /usr/bin/cp "${PREPAREDIR}/${PACKAGE}" .
-  [ ${USEGPG} == "yes" ] && /usr/bin/cp "${PREPAREDIR}/${PACKAGE}.sig" .
-  /usr/bin/repo-add ${DBNAME}.db.tar.gz "${PACKAGE}"
-  /usr/bin/repo-add --files ${DBNAME}.files.tar.gz "${PACKAGE}"
 done
 
 # creating symlinks
-if [ ${SYMLINK} == "yes" ]; then
+if [ "${SYMLINK}" == "yes" ]; then
   echo -e "${bwhite}[II]${cclose} Creating symlinks"
   if [ ! -d "${REPODIR}/non-versioned" ]; then
     [ -e "${REPODIR}/non-versioned" ] && error_mes "file" "${REPODIR}/non-versioned"

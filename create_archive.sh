@@ -7,6 +7,7 @@ mkdir -p ${ARCHIVE}/usr/{bin,lib/systemd/system}
 mkdir -p ${ARCHIVE}/etc
 
 cp sources/repo-check ${ARCHIVE}/usr/bin/
+cp sources/repo-clear ${ARCHIVE}/usr/bin/
 cp sources/repo-update ${ARCHIVE}/usr/bin/
 cp sources/repo-scripts.conf ${ARCHIVE}/etc/
 cp install.sh ${ARCHIVE}/
