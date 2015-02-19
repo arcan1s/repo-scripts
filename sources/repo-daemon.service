@@ -1,0 +1,11 @@
+[Unit]
+Description=Service for repo-scripts
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/repo-daemon
+User=root
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

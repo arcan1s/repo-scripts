@@ -1,0 +1,103 @@
+#!/bin/bash
+#     repo-scripts is a set of scripts to work with your repository
+#     Copyright (C) 2014 Evgeniy Alekseev
+#
+#     This program is free software; you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation; either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program; if not, see http://www.gnu.org/licenses
+#     or write to the Free Software Foundation,Inc., 51 Franklin Street,
+#     Fifth Floor, Boston, MA 02110-1301  USA
+
+
+# functions
+error_mes() {
+  case "$1" in
+    "config"    ) echo "[EE] Configuration file is not set"                                              ;;
+    "file"      ) echo "[EE] '$2' is a file"                                                             ;;
+    "flag"      ) echo "[EE] Unknown flag"                                                               ;;
+    "unknown"   ) echo "[EE] Unknown error"                                                              ;;
+  esac
+  exit 1
+}
+func_help() {
+  echo -e "Script written on BASH for checking packages for updates as daemon"
+  echo -e "\nUsage: repo-daemon [ -c /etc/repo-scripts.conf ] [ -s ] [ -v | --version ] [ -h | --help ]"
+  echo -e "\nParametrs:"
+  echo -e "  -c               PATH     - path to configuration file. Default is
+                              '/etc/repo-scripts.conf'"
+  echo -e "\n  -v   --version            - show version and exit"
+  echo -e "  -h   --help               - show this help and exit"
+  exit 0
+}
+func_ver() {
+  echo -e "                                   repo-daemon                                  "
+  echo -e "A set of scripts to work with your repository                                   "
+  echo -e "Version : 1.4.0                                                  License : GPLv3"
+  echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
+  echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
+  exit 0
+}
+func_create_html() {
+  local ITEM
+  echo "<html><body><ul>" > "$1"
+  for ITEM in $(find $2/$3 -name '*.pkg.tar.xz' | sort | sed 's|'$2/$3/'||g'); do
+    echo "<li><a href=\"$4/$3/${ITEM}\">${ITEM}</a></li>" >> "$1"
+  done
+  echo "</ul></body></html>" >> "$1"
+}
+
+CONF_FILE="/etc/repo-scripts.conf"
+# parametrs parsing
+until [ -z $1 ]; do
+  case "$1" in
+    "-h" | "--help"    ) func_help                                                    ;;
+    "-v" | "--version" ) func_ver                                                     ;;
+    "-c"               ) [ -z "$2" ] && error_mes "config" || CONF_FILE="$2" && shift ;;
+    *                  ) error_mes "flag"                                             ;;
+  esac
+  shift
+done
+# default values
+SLEEPTIME="1h"
+LOGDIR="${HOME}/arch/logs/"
+ENABLEREPORT="no"
+REMOTEHOST="root@localhost:/var/www/html/"
+REMOTELOG="root@localhost:/var/log/build-repo.log"
+REPOPATH="ftp://localhost/repo/"
+REPODIR="${HOME}/arch/repo/"
+echo -e "[II] Reading configuration from '${CONF_FILE}'"
+source "${CONF_FILE}"
+
+# error checking
+if [ ! -d "${LOGDIR}" ]; then
+  [ -e "${LOGDIR}" ] && error_mes "file" "${LOGDIR}"
+  echo -e "[II] Creating directory '${LOGDIR}'"
+  /usr/bin/mkdir -p "${LOGDIR}/" || error_mes "unknown"
+fi
+
+
+## work block
+echo -e "[II] Starting"
+while true; do
+  sleep "${SLEEPTIME}"
+  LOGFILE="$(date --utc +%Y-%m-%d-%H-%M).log"
+  echo -e "[II] Created log file '${LOGDIR}/${LOGFILE}'"
+  /usr/bin/repo-check -c "${CONF_FILE}" &> "${LOGDIR}/${LOGFILE}"
+  if [ ${ENABLEREPORT} == "yes" ]; then
+    echo -e "[II] Send report"
+    func_create_html "${LOGDIR}/i686.html" "${REPODIR}" "i686" "${REPOPATH}"
+    func_create_html "${LOGDIR}/x86_64.html" "${REPODIR}" "x86_64" "${REPOPATH}"
+    /usr/bin/scp "${LOGDIR}/${LOGFILE}" "${REMOTELOG}"
+    /usr/bin/scp "${LOGDIR}/i686.html" "${REMOTEHOST}/i686/index.html"
+    /usr/bin/scp "${LOGDIR}/x86_64.html" "${REMOTEHOST}/x86_64/index.html"
+  fi
+done

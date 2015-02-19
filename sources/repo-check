@@ -21,9 +21,9 @@
 # functions
 error_mes() {
   if [ ${USECOLOR} == "yes" ]; then
-    _red='\e[0;31m'
-    _bwhite='\e[1;37m'
-    _cclose='\e[0m'
+    local _red='\e[0;31m'
+    local _bwhite='\e[1;37m'
+    local _cclose='\e[0m'
   fi
   case "$1" in
     "config"    ) echo "${_red}[EE] ${_bwhite}Configuration file is not set${_cclose}"                   ;;
@@ -47,23 +47,23 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-check                                   "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.3.1                                                  License : GPLv3"
+  echo -e "Version : 1.4.0                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
 }
 func_update() {
   if [ ${USECOLOR} == "yes" ]; then
-    _bred='\e[1;31m'
-    _bgreen='\e[1;32m'
-    _byellow='\e[1;33m'
-    _bblue='\e[1;34m'
-    _bwhite='\e[1;37m'
-    _cclose='\e[0m'
+    local _bred='\e[1;31m'
+    local _bgreen='\e[1;32m'
+    local _byellow='\e[1;33m'
+    local _bblue='\e[1;34m'
+    local _bwhite='\e[1;37m'
+    local _cclose='\e[0m'
   fi
-  _PKGNAME="$1"
-  _PKGVER="$2"
-  _REPODIR="$3"
+  local _PKGNAME="$1"
+  local _PKGVER="$2"
+  local _REPODIR="$3"
 
   echo -e "${_bwhite}[II] ${_bblue}=>${_cclose} Checking ${_bwhite}${_PKGNAME}${_cclose}"
   if [[ "${_PKGNAME}" =~ -bzr|-git|-hg|-svn ]]; then
@@ -98,11 +98,11 @@ until [ -z $1 ]; do
 done
 # default values
 IGNORELIST=""
-REPODIR="${HOME}/arch/repo"
+REPODIR="${HOME}/arch/repo/"
 STAGINGDIR="${HOME}/arch/staging/"
 USECOLOR="yes"
 echo -e "[II] Reading configuration from '${CONF_FILE}'"
-. "${CONF_FILE}"
+source "${CONF_FILE}"
 if [ ${USECOLOR} == "yes" ]; then
   bblue='\e[1;34m'
   bwhite='\e[1;37m'
