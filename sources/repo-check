@@ -20,25 +20,26 @@
 
 # functions
 error_mes() {
-  if [ ${USECOLOR} == "yes" ]; then
+  if [ "${USECOLOR}" == "yes" ]; then
     local _red='\e[0;31m'
     local _bwhite='\e[1;37m'
     local _cclose='\e[0m'
   fi
   case "$1" in
-    "config"    ) echo "${_red}[EE] ${_bwhite}Configuration file is not set${_cclose}"                   ;;
-    "file"      ) echo "${_red}[EE] ${_bwhite}'$2' is a file${_cclose}"                                  ;;
-    "flag"      ) echo "${_red}[EE] ${_bwhite}Unknown flag${_cclose}"                                    ;;
-    "unknown"   ) echo "${_red}[EE] ${_bwhite}Unknown error${_cclose}"                                   ;;
+    "config"    ) echo "${_red}[EE] ${_bwhite}Configuration file is not set${_cclose}" ;;
+    "file"      ) echo "${_red}[EE] ${_bwhite}'$2' is a file${_cclose}"                ;;
+    "flag"      ) echo "${_red}[EE] ${_bwhite}Unknown flag${_cclose}"                  ;;
+    "unknown"   ) echo "${_red}[EE] ${_bwhite}Unknown error${_cclose}"                 ;;
   esac
   exit 1
 }
 func_help() {
   echo -e "Script written on BASH for checking packages for updates"
-  echo -e "\nUsage: repo-check [ -c /etc/repo-scripts.conf ] [ -s ] [ -v | --version ] [ -h | --help ]"
+  echo -e "\nUsage: repo-check [ -c /etc/repo-scripts.conf ] [ --nocolor ] [ -s ] [ -v | --version ] [ -h | --help ]"
   echo -e "\nParametrs:"
   echo -e "  -c               PATH     - path to configuration file. Default is
                               '/etc/repo-scripts.conf'"
+  echo -e "       --nocolor            - force disable colors"
   echo -e "  -s                        - only show status and exit"
   echo -e "\n  -v   --version            - show version and exit"
   echo -e "  -h   --help               - show this help and exit"
@@ -47,13 +48,13 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-check                                   "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.4.0                                                  License : GPLv3"
+  echo -e "Version : 1.4.1                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
 }
 func_update() {
-  if [ ${USECOLOR} == "yes" ]; then
+  if [ "${USECOLOR}" == "yes" ]; then
     local _bred='\e[1;31m'
     local _bgreen='\e[1;32m'
     local _byellow='\e[1;33m'
@@ -83,6 +84,7 @@ func_update() {
   esac
 }
 
+CMD_NOCOLOR="no"
 CONF_FILE="/etc/repo-scripts.conf"
 SHOW_ONLY="no"
 # parametrs parsing
@@ -91,6 +93,7 @@ until [ -z $1 ]; do
     "-h" | "--help"    ) func_help                                                    ;;
     "-v" | "--version" ) func_ver                                                     ;;
     "-c"               ) [ -z "$2" ] && error_mes "config" || CONF_FILE="$2" && shift ;;
+    "--nocolor"        ) CMD_NOCOLOR="yes"                                            ;;
     "-s"               ) SHOW_ONLY="yes"                                              ;;
     *                  ) error_mes "flag"                                             ;;
   esac
@@ -103,7 +106,8 @@ STAGINGDIR="${HOME}/arch/staging/"
 USECOLOR="yes"
 echo -e "[II] Reading configuration from '${CONF_FILE}'"
 source "${CONF_FILE}"
-if [ ${USECOLOR} == "yes" ]; then
+[ "${CMD_NOCOLOR}" == "yes" ] && USECOLOR="no"
+if [ "${USECOLOR}" == "yes" ]; then
   bblue='\e[1;34m'
   bwhite='\e[1;37m'
   cclose='\e[0m'
@@ -172,5 +176,5 @@ if [[ $(/usr/bin/find . -type d | /usr/bin/wc -l) > 1 ]]; then
     done
     exit 0
   fi
-  /usr/bin/repo-update -c "${CONF_FILE}"
+  [ "${CMD_NOCOLOR}" == "yes" ] && /usr/bin/repo-update --nocolor -c "${CONF_FILE}" || /usr/bin/repo-update -c "${CONF_FILE}"
 fi

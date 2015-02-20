@@ -21,10 +21,10 @@
 # functions
 error_mes() {
   case "$1" in
-    "config"    ) echo "[EE] Configuration file is not set"                                              ;;
-    "file"      ) echo "[EE] '$2' is a file"                                                             ;;
-    "flag"      ) echo "[EE] Unknown flag"                                                               ;;
-    "unknown"   ) echo "[EE] Unknown error"                                                              ;;
+    "config"    ) echo "[EE] Configuration file is not set"                   ;;
+    "file"      ) echo "[EE] '$2' is a file"                                  ;;
+    "flag"      ) echo "[EE] Unknown flag"                                    ;;
+    "unknown"   ) echo "[EE] Unknown error"                                   ;;
   esac
   exit 1
 }
@@ -41,7 +41,7 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-daemon                                  "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.4.0                                                  License : GPLv3"
+  echo -e "Version : 1.4.1                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
@@ -91,8 +91,8 @@ while true; do
   sleep "${SLEEPTIME}"
   LOGFILE="$(date --utc +%Y-%m-%d-%H-%M).log"
   echo -e "[II] Created log file '${LOGDIR}/${LOGFILE}'"
-  /usr/bin/repo-check -c "${CONF_FILE}" &> "${LOGDIR}/${LOGFILE}"
-  if [ ${ENABLEREPORT} == "yes" ]; then
+  /usr/bin/repo-check --nocolor -c "${CONF_FILE}" &> "${LOGDIR}/${LOGFILE}"
+  if [ "${ENABLEREPORT}" == "yes" ]; then
     echo -e "[II] Send report"
     func_create_html "${LOGDIR}/i686.html" "${REPODIR}" "i686" "${REPOPATH}"
     func_create_html "${LOGDIR}/x86_64.html" "${REPODIR}" "x86_64" "${REPOPATH}"
