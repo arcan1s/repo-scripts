@@ -25,9 +25,9 @@ error_mes() {
     local _bwhite='\e[1;37m'
     local _cclose='\e[0m'
   fi
-  case "$1" in
+  case "${1}" in
     "config"    ) echo "${_red}[EE] ${_bwhite}Configuration file is not set${_cclose}" ;;
-    "file"      ) echo "${_red}[EE] ${_bwhite}'$2' is a file${_cclose}"                ;;
+    "file"      ) echo "${_red}[EE] ${_bwhite}'${2}' is a file${_cclose}"              ;;
     "unknown"   ) echo "${_red}[EE] ${_bwhite}Unknown error${_cclose}"                 ;;
   esac
   exit 1
@@ -48,13 +48,13 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-clear                                   "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.4.1                                                  License : GPLv3"
+  echo -e "Version : 1.5.0                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
 }
 func_remove() {
-  local _PACKAGE="$1"
+  local _PACKAGE="${1}"
   /usr/bin/rm -f "${_PACKAGE}"{,.sig}
 }
 
@@ -64,11 +64,11 @@ PKGLIST=()
 # parametrs parsing
 until [ -z $1 ]; do
   case "$1" in
-    "-h" | "--help"    ) func_help                                                    ;;
-    "-v" | "--version" ) func_ver                                                     ;;
-    "-c"               ) [ -z "$2" ] && error_mes "config" || CONF_FILE="$2" && shift ;;
-    "--nocolor"        ) CMD_NOCOLOR="yes"                                            ;;
-    *                  ) PKGLIST+=("$1")                                              ;;
+    "-h" | "--help"    ) func_help                                                        ;;
+    "-v" | "--version" ) func_ver                                                         ;;
+    "-c"               ) [ -z "${2}" ] && error_mes "config" || CONF_FILE="${2}" && shift ;;
+    "--nocolor"        ) CMD_NOCOLOR="yes"                                                ;;
+    *                  ) PKGLIST+=("${1}")                                                  ;;
   esac
   shift
 done
@@ -131,5 +131,5 @@ if [ "${SYMLINK}" == "yes" ]; then
     /usr/bin/mkdir -p "${REPODIR}/non-versioned" || error_mes "unknown"
   fi
   cd "${REPODIR}/non-versioned"
-  /usr/bin/find . -type \l -xtype \l -exec /usr/bin/rm {} \;
+  /usr/bin/find . -type l -xtype l -exec /usr/bin/rm {} \;
 fi

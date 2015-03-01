@@ -20,9 +20,9 @@
 
 # functions
 error_mes() {
-  case "$1" in
+  case "${1}" in
     "config"    ) echo "[EE] Configuration file is not set"                   ;;
-    "file"      ) echo "[EE] '$2' is a file"                                  ;;
+    "file"      ) echo "[EE] '${2}' is a file"                                ;;
     "flag"      ) echo "[EE] Unknown flag"                                    ;;
     "unknown"   ) echo "[EE] Unknown error"                                   ;;
   esac
@@ -41,33 +41,34 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-daemon                                  "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.4.1                                                  License : GPLv3"
+  echo -e "Version : 1.4.2                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
 }
 func_create_html() {
   local ITEM
-  echo "<html><body><ul>" > "$1"
-  for ITEM in $(find $2/$3 -name '*.pkg.tar.xz' | sort | sed 's|'$2/$3/'||g'); do
-    echo "<li><a href=\"$4/$3/${ITEM}\">${ITEM}</a></li>" >> "$1"
+  echo "<html><body><ul>" > "${1}"
+  for ITEM in $(find ${2}/${3} -name '*.pkg.tar.xz' | sort | sed 's|'${2}/${3}/'||g'); do
+    echo "<li><a href=\"${4}/${3}/${ITEM}\">${ITEM}</a></li>" >> "${1}"
   done
-  echo "</ul></body></html>" >> "$1"
+  echo "</ul></body></html>" >> "${1}"
 }
 
 CONF_FILE="/etc/repo-scripts.conf"
 # parametrs parsing
-until [ -z $1 ]; do
-  case "$1" in
-    "-h" | "--help"    ) func_help                                                    ;;
-    "-v" | "--version" ) func_ver                                                     ;;
-    "-c"               ) [ -z "$2" ] && error_mes "config" || CONF_FILE="$2" && shift ;;
-    *                  ) error_mes "flag"                                             ;;
+until [ -z ${1} ]; do
+  case "${1}" in
+    "-h" | "--help"    ) func_help                                                        ;;
+    "-v" | "--version" ) func_ver                                                         ;;
+    "-c"               ) [ -z "${2}" ] && error_mes "config" || CONF_FILE="${2}" && shift ;;
+    *                  ) error_mes "flag"                                                 ;;
   esac
   shift
 done
 # default values
 SLEEPTIME="1h"
+CHECKVCSTIME=24
 LOGDIR="${HOME}/arch/logs/"
 ENABLEREPORT="no"
 REMOTEHOST="root@localhost:/var/www/html/"
@@ -81,17 +82,25 @@ source "${CONF_FILE}"
 if [ ! -d "${LOGDIR}" ]; then
   [ -e "${LOGDIR}" ] && error_mes "file" "${LOGDIR}"
   echo -e "[II] Creating directory '${LOGDIR}'"
-  /usr/bin/mkdir -p "${LOGDIR}/" || error_mes "unknown"
+  /usr/bin/mkdir -p "${LOGDIR}" || error_mes "unknown"
 fi
 
 
 ## work block
 echo -e "[II] Starting"
+CHECK_VCS=0
 while true; do
   sleep "${SLEEPTIME}"
   LOGFILE="$(date --utc +%Y-%m-%d-%H-%M).log"
   echo -e "[II] Created log file '${LOGDIR}/${LOGFILE}'"
-  /usr/bin/repo-check --nocolor -c "${CONF_FILE}" &> "${LOGDIR}/${LOGFILE}"
+  if [[ ${CHECK_VCS} == ${CHECKVCSTIME} ]]; then
+    /usr/bin/repo-check --nocolor -c "${CONF_FILE}" --vcs &> "${LOGDIR}/${LOGFILE}"
+    CHECK_VCS=0
+  else
+    /usr/bin/repo-check --nocolor -c "${CONF_FILE}" &> "${LOGDIR}/${LOGFILE}"
+    CHECK_VCS=$((${CHECK_VCS}+1))
+  fi
+  [[ ${CHECK_VCS} == 65535 ]] && CHECK_VCS=0
   if [ "${ENABLEREPORT}" == "yes" ]; then
     echo -e "[II] Send report"
     func_create_html "${LOGDIR}/i686.html" "${REPODIR}" "i686" "${REPOPATH}"
