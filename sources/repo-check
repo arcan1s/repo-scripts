@@ -50,7 +50,7 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-check                                   "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.5.0                                                  License : GPLv3"
+  echo -e "Version : 1.5.1                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
@@ -67,14 +67,15 @@ func_update() {
   local _PKGNAME="${1}"
   local _PKGVER="${2}"
   local _REPODIR="${3}"
+  local _VCSDIR="${4}"
 
   echo -e "${_bwhite}[II] ${_bblue}=>${_cclose} Checking ${_bwhite}${_PKGNAME}${_cclose}"
-  if [[ ${_PKGNAME} =~ -bzr|-git|-hg|-svn ]]; then
+  if [[ ${_PKGNAME} =~ -bzr$|-git$|-hg$|-svn$ ]]; then
     if [[ ${CHECK_VCS} == "no" ]]; then
       echo -e "${_bwhite}[II] ${_byellow}${_PKGNAME} is VCS package${_cclose}"
       return 1
     fi
-    func_check_vcs "${_PKGNAME}" "${_PKGVER}"
+    func_check_vcs "${_PKGNAME}" "${_PKGVER}" "${_VCSDIR}"
     if [ -d "${_PKGNAME}" ]; then
       echo -e "${_bwhite}[II] ${_bred}${_PKGNAME} is out-of-date${_cclose}"
     else
@@ -97,7 +98,10 @@ func_update() {
 func_check_vcs() {
   local _PKGNAME="${1}"
   local _PKGVER="${2}"
+  local _VCSDIR="${3}"
+  local _STAGINGDIR="$(pwd)"
   # get sources
+  cd "${_VCSDIR}"
   /usr/bin/yaourt -G "aur/${_PKGNAME}" --noconfirm &> /dev/null
   pushd "${_PKGNAME}" 1> /dev/null
   /usr/bin/makepkg --nobuild --nodeps --noprogressbar 2> /dev/null
@@ -107,7 +111,8 @@ func_check_vcs() {
   local _NEWVER="$(pkgver)-${pkgrel}"
   popd 1> /dev/null
   # check
-  [[ ${_PKGVER} == ${_NEWVER} ]] && /usr/bin/rm -rf "${_PKGNAME}"
+  [[ ${_PKGVER} == ${_NEWVER} ]] || /usr/bin/cp -r "${_PKGNAME}" "${_STAGINGDIR}"
+  cd "${_STAGINGDIR}"
 }
 
 CHECK_VCS="no"
@@ -128,9 +133,11 @@ until [ -z ${1} ]; do
   shift
 done
 # default values
+ARCHS="i686 x86_64"
 IGNORELIST=""
 REPODIR="${HOME}/arch/repo/"
 STAGINGDIR="${HOME}/arch/staging/"
+VCSDIR="${HOME}/arch/vcs/"
 USECOLOR="yes"
 echo -e "[II] Reading configuration from '${CONF_FILE}'"
 source "${CONF_FILE}"
@@ -147,22 +154,24 @@ export CHECK_VCS
 if [ ! -d "${REPODIR}" ]; then
   [ -e "${REPODIR}" ] && error_mes "file" "${REPODIR}"
   echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${REPODIR}'${cclose}"
-  /usr/bin/mkdir -p "${REPODIR}/"{i686,x86_64} || error_mes "unknown"
+  /usr/bin/mkdir -p "${REPODIR}" || error_mes "unknown"
 fi
-if [ ! -d "${REPODIR}/i686" ]; then
-  [ -e "${REPODIR}/i686" ] && error_mes "file" "${REPODIR}/i686"
-  echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${REPODIR}/i686'${cclose}"
-  /usr/bin/mkdir -p "${REPODIR}/i686" || error_mes "unknown"
-fi
-if [ ! -d "${REPODIR}/x86_64" ]; then
-  [ -e "${REPODIR}/x86_64" ] && error_mes "file" "${REPODIR}/x86_64"
-  echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${REPODIR}/x86_64'${cclose}"
-  /usr/bin/mkdir -p "${REPODIR}/x86_64" || error_mes "unknown"
-fi
+for ARCH in ${ARCHS}; do
+  if [ ! -d "${REPODIR}/${ARCH}" ]; then
+    [ -e "${REPODIR}/${ARCH}" ] && error_mes "file" "${REPODIR}/${ARCH}"
+    echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${REPODIR}/${ARCH}'${cclose}"
+    /usr/bin/mkdir -p "${REPODIR}/${ARCH}" || error_mes "unknown"
+  fi
+done
 if [ ! -d "${STAGINGDIR}" ]; then
   [ -e "${STAGINGDIR}" ] && error_mes "file" "${STAGINGDIR}"
   echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${STAGINGDIR}'${cclose}"
   /usr/bin/mkdir -p "${STAGINGDIR}" || error_mes "unknown"
+fi
+if [ ! -d "${VCSDIR}" ]; then
+  [ -e "${VCSDIR}" ] && error_mes "file" "${VCSDIR}"
+  echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${VCSDIR}'${cclose}"
+  /usr/bin/mkdir -p "${VCSDIR}" || error_mes "unknown"
 fi
 
 
@@ -174,23 +183,27 @@ echo -e "${bwhite}[II]${cclose} Updating local database"
 # get list
 echo -e "${bwhite}[II]${cclose} Getting list of packages"
 /usr/bin/rm -f "${STAGINGDIR}/pkglist"
-cd "${REPODIR}/i686"
-/usr/bin/find . -name '*.pkg.tar.xz' | /usr/bin/grep -v "${IGNORELIST}" | /usr/bin/cut -c 3- >> "${STAGINGDIR}/pkglist"
-cd "${REPODIR}/x86_64"
-/usr/bin/find . -name '*.pkg.tar.xz' | /usr/bin/grep -v "${IGNORELIST}" | /usr/bin/cut -c 3- >> "${STAGINGDIR}/pkglist"
+for ARCH in ${ARCHS}; do
+  cd "${REPODIR}/${ARCH}"
+  /usr/bin/find . -name '*.pkg.tar.xz' | /usr/bin/grep -v "${IGNORELIST}" | /usr/bin/cut -c 3- >> "${STAGINGDIR}/pkglist"
+done
 
 # work block
 echo -e "${bwhite}[II]${cclose} Checking packages"
 cd "${STAGINGDIR}"
 for PACKAGE in $(/usr/bin/cat pkglist); do
-  if [[ "${PACKAGE}" =~ -i686.pkg.tar.xz$|-any.pkg.tar.xz$ ]]; then
+  if [[ "${PACKAGE}" =~ -i686.pkg.tar.xz$ ]]; then
     PKGNAME=$(/usr/bin/package-query -p -f %n "${REPODIR}/i686/${PACKAGE}")
     PKGVER=$(/usr/bin/package-query -p -f %V "${REPODIR}/i686/${PACKAGE}")
+  elif if [[ "${PACKAGE}" =~ -any.pkg.tar.xz$ ]]; then
+    ARCH=$(echo ${ARCHS} | /usr/bin/cut -d ' ' -f 1)
+    PKGNAME=$(/usr/bin/package-query -p -f %n "${REPODIR}/${ARCH}/${PACKAGE}")
+    PKGVER=$(/usr/bin/package-query -p -f %V "${REPODIR}/${ARCH}/${PACKAGE}")
   else
     PKGNAME=$(/usr/bin/package-query -p -f %n "${REPODIR}/x86_64/${PACKAGE}")
     PKGVER=$(/usr/bin/package-query -p -f %V "${REPODIR}/x86_64/${PACKAGE}")
   fi
-  func_update "${PKGNAME}" "${PKGVER}" "${REPODIR}"
+  func_update "${PKGNAME}" "${PKGVER}" "${REPODIR}" "${VCSDIR}"
 done
 /usr/bin/rm -f "${STAGINGDIR}/pkglist"
 
