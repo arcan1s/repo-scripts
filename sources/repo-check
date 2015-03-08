@@ -50,7 +50,7 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-check                                   "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.5.1                                                  License : GPLv3"
+  echo -e "Version : 1.5.2                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
@@ -195,7 +195,7 @@ for PACKAGE in $(/usr/bin/cat pkglist); do
   if [[ "${PACKAGE}" =~ -i686.pkg.tar.xz$ ]]; then
     PKGNAME=$(/usr/bin/package-query -p -f %n "${REPODIR}/i686/${PACKAGE}")
     PKGVER=$(/usr/bin/package-query -p -f %V "${REPODIR}/i686/${PACKAGE}")
-  elif if [[ "${PACKAGE}" =~ -any.pkg.tar.xz$ ]]; then
+  elif [[ "${PACKAGE}" =~ -any.pkg.tar.xz$ ]]; then
     ARCH=$(echo ${ARCHS} | /usr/bin/cut -d ' ' -f 1)
     PKGNAME=$(/usr/bin/package-query -p -f %n "${REPODIR}/${ARCH}/${PACKAGE}")
     PKGVER=$(/usr/bin/package-query -p -f %V "${REPODIR}/${ARCH}/${PACKAGE}")
