@@ -26,20 +26,23 @@ error_mes() {
     local _cclose='\e[0m'
   fi
   case "${1}" in
-    "config"    ) echo "${_red}[EE] ${_bwhite}Configuration file is not set${_cclose}" ;;
-    "file"      ) echo "${_red}[EE] ${_bwhite}'${2}' is a file${_cclose}"              ;;
-    "flag"      ) echo "${_red}[EE] ${_bwhite}Unknown flag${_cclose}"                  ;;
-    "unknown"   ) echo "${_red}[EE] ${_bwhite}Unknown error${_cclose}"                 ;;
+    "config"    ) echo "${_red}[EE] ${_bwhite}Configuration file is not set${_cclose}"  ;;
+    "file"      ) echo "${_red}[EE] ${_bwhite}'${2}' is a file${_cclose}"               ;;
+    "flag"      ) echo "${_red}[EE] ${_bwhite}Unknown flag${_cclose}"                   ;;
+    "lock"      ) echo "${_red}[EE] ${_bwhite}The process is already running${_cclose}" ;;
+    "unknown"   ) echo "${_red}[EE] ${_bwhite}Unknown error${_cclose}"                  ;;
   esac
   exit 1
 }
 func_help() {
   echo -e "Script written on BASH for update custom repository"
-  echo -e "\nUsage: repo-update [ -c /etc/repo-scripts.conf ] [ --nocolor ] [ -v | --version ] [ -h | --help ]"
+  echo -e "\nUsage: repo-update [ -c /etc/repo-scripts.conf ] [ --nocolor ] [ -f | --force ]"
+  echo -e "                                            [ -v | -- version ] [ -h | --help ]"
   echo -e "\nParametrs:"
   echo -e "  -c               PATH     - path to configuration file. Default is
                               '/etc/repo-scripts.conf'"
   echo -e "       --nocolor            - force disable colors"
+  echo -e "  -f   --force              - force if lock file exist"
   echo -e "\n  -v   --version            - show version and exit"
   echo -e "  -h   --help               - show this help and exit"
   exit 0
@@ -47,7 +50,7 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-update                                  "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.5.2                                                  License : GPLv3"
+  echo -e "Version : 1.5.3                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
@@ -85,6 +88,7 @@ func_build() {
 }
 export -f func_build
 
+CMD_FORCE="no"
 CMD_NOCOLOR="no"
 CONF_FILE="/etc/repo-scripts.conf"
 # parametrs parsing
@@ -94,6 +98,7 @@ until [ -z ${1} ]; do
     "-v" | "--version" ) func_ver                                                         ;;
     "-c"               ) [ -z "${2}" ] && error_mes "config" || CONF_FILE="${2}" && shift ;;
     "--nocolor"        ) CMD_NOCOLOR="yes"                                                ;;
+    "-f" | "--force"   ) CMD_FORCE="yes"                                                  ;;
     *                  ) error_mes "flag"                                                 ;;
   esac
   shift
@@ -101,6 +106,7 @@ done
 # default values
 ARCHS="i686 x86_64"
 DBNAME="custom"
+LOCKFILE="/tmp/repo-update.lock"
 PREPAREDIR="${HOME}/arch/prepare/"
 REPODIR="${HOME}/arch/repo/"
 ROOTDIR="${HOME}/arch/root/"
@@ -111,6 +117,7 @@ USEGPG="yes"
 echo -e "[II] Reading configuration from '${CONF_FILE}'"
 source "${CONF_FILE}"
 [ "${CMD_NOCOLOR}" == "yes" ] && USECOLOR="no"
+[ "${CMD_FORCE}" == "yes" ] && LOCKFILE=""
 if [ "${USECOLOR}" == "yes" ]; then
   bblue='\e[1;34m'
   bwhite='\e[1;37m'
@@ -142,6 +149,9 @@ if [ ! -d "${STAGINGDIR}" ]; then
   /usr/bin/mkdir -p "${STAGINGDIR}" || error_mes "unknown"
 fi
 
+# lock file
+[ -e "${LOCKFILE}" ] && error_mes "lock"
+/usr/bin/touch "${LOCKFILE}" 2> /dev/null || /usr/bin/true
 
 ## work block
 # building
@@ -211,3 +221,4 @@ cd "${PREPAREDIR}"
 /usr/bin/rm -rf *
 cd "${STAGINGDIR}"
 /usr/bin/rm -rf *
+/usr/bin/rm -f "${LOCKFILE}"
