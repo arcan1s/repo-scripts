@@ -55,10 +55,29 @@ func_ver() {
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
 }
+
 func_remove() {
   local _PACKAGE="${1}"
   /usr/bin/rm -f "${_PACKAGE}"{,.sig}
 }
+
+REPOx86=false;
+REPOx64=false;
+
+#Check repo archs
+func_check_archs() {
+	for ARCH in ${ARCHS}; do
+		if [ "$ARCH" = "i686" ]; then
+			REPOx86=true;
+		fi;
+		if [ "$ARCH" = "x86_64" ]; then
+			REPOx64=true;
+		fi;
+	done;
+}
+
+export -f func_check_archs;
+
 func_build() {
   if [ "${USECOLOR}" == "yes" ]; then
     local _bblue='\e[1;34m'
@@ -86,7 +105,66 @@ func_build() {
   fi
   /usr/bin/cp *.pkg.tar.xz "${_PREPAREDIR}" 2> /dev/null
 }
-export -f func_build
+
+#export -f func_build
+
+func_build_new() {
+	if [ "${USECOLOR}" == "yes" ]; then
+    		local _bblue='\e[1;34m'
+    		local _bwhite='\e[1;37m'
+    		local _cclose='\e[0m'
+  	fi
+  	local _PREPAREDIR="${1}"
+  	local _ROOTDIR="${2}"
+  	local _REPOx86="${3}";
+	local _REPOx64="${4}";
+
+  	source PKGBUILD
+  	echo -e "${_bwhite}[II] ${_bblue}=>${_cclose} Building ${_bwhite}${pkgname}${_cclose}"
+
+  	if [[ ${arch} =~ any ]]; then
+    		if [ ${_REPOx64} = true ]; then
+    			echo -e "Build any package with staging-x86_64-build";
+      			#LC_MESSAGES=C /usr/bin/sudo /usr/bin/extra-x86_64-build -r "${_ROOTDIR}" -c
+      			LC_MESSAGES=C /usr/bin/sudo /usr/bin/staging-x86_64-build -r "${_ROOTDIR}" -c
+    		else
+    			echo -e "Build any package with staging-i686-build";
+    			#LC_MESSAGES=C /usr/bin/sudo /usr/bin/extra-i686-build -r "${_ROOTDIR}" -c
+    			LC_MESSAGES=C /usr/bin/sudo /usr/bin/staging-i686-build -r "${_ROOTDIR}" -c
+    		fi;
+  	else
+		if [[ ${pkgname} =~ lib32 ]]; then
+			echo -e "Build lib32 package";
+      			LC_MESSAGES=C /usr/bin/sudo /usr/bin/multilib-build -r "${_ROOTDIR}" -c
+    		else
+      			if /usr/bin/grep 'lib32' PKGBUILD -q; then
+      				if [ ${_REPOx64} = true ]; then
+      					echo -e "Build lib32 package";
+      					LC_MESSAGES=C /usr/bin/sudo /usr/bin/multilib-build -r "${_ROOTDIR}" -c
+      				fi;
+      				if [ ${_REPOx86} = true ]; then
+      					echo -e "Build i686 package";
+      					#LC_MESSAGES=C /usr/bin/sudo /usr/bin/extra-i686-build -r "${_ROOTDIR}" -c
+      					LC_MESSAGES=C /usr/bin/sudo /usr/bin/staging-i686-build -r "${_ROOTDIR}" -c
+      				fi;
+      			else
+      				if [ ${_REPOx64} = true ]; then
+      					echo -e "Build x86_64 package";
+      					#LC_MESSAGES=C /usr/bin/sudo /usr/bin/extra-x86_64-build -r "${_ROOTDIR}" -c
+      					LC_MESSAGES=C /usr/bin/sudo /usr/bin/staging-x86_64-build -r "${_ROOTDIR}" -c
+      				fi;
+      				if [ ${_REPOx86} = true ]; then
+      					echo -e "Build i686 package";
+      					#LC_MESSAGES=C /usr/bin/sudo /usr/bin/extra-i686-build -r "${_ROOTDIR}" -c
+      					LC_MESSAGES=C /usr/bin/sudo /usr/bin/staging-i686-build -r "${_ROOTDIR}" -c
+      				fi;
+      			fi
+    		fi
+  	fi
+  	/usr/bin/cp *.pkg.tar.xz "${_PREPAREDIR}" 2> /dev/null
+}
+
+export -f func_build_new
 
 CMD_FORCE="no"
 CMD_NOCOLOR="no"
@@ -157,7 +235,9 @@ fi
 # building
 echo -e "${bwhite}[II]${cclose} Building packages"
 cd "${STAGINGDIR}"
-/usr/bin/find -name 'PKGBUILD' -type f -execdir /usr/bin/bash -c "func_build "${PREPAREDIR}" "${ROOTDIR}"" \;
+#/usr/bin/find -name 'PKGBUILD' -type f -execdir /usr/bin/bash -c "func_build "${PREPAREDIR}" "${ROOTDIR}"" \;
+func_check_archs; #Check repository architectures
+/usr/bin/find -name 'PKGBUILD' -type f -execdir /usr/bin/bash -c "func_build_new "${PREPAREDIR}" "${ROOTDIR}" "${REPOx86}" "${REPOx64}"" \;
 
 # signing
 if [ "${USEGPG}" == "yes" ]; then
