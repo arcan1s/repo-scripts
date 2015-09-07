@@ -55,12 +55,10 @@ func_ver() {
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
 }
-
 func_remove() {
   local _PACKAGE="${1}"
   /usr/bin/rm -f "${_PACKAGE}"{,.sig}
 }
-
 func_build() {
   if [ "${USECOLOR}" == "yes" ]; then
     local _bblue='\e[1;34m'
@@ -88,7 +86,6 @@ func_build() {
   fi
   /usr/bin/cp *.pkg.tar.xz "${_PREPAREDIR}" 2> /dev/null
 }
-
 export -f func_build
 
 CMD_FORCE="no"
