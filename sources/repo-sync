@@ -1,0 +1,123 @@
+#!/bin/bash
+#     repo-scripts is a set of scripts to work with your repository
+#     Copyright (C) 2014 Evgeniy Alekseev
+#
+#     This program is free software; you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation; either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program; if not, see http://www.gnu.org/licenses
+#     or write to the Free Software Foundation,Inc., 51 Franklin Street,
+#     Fifth Floor, Boston, MA 02110-1301  USA
+
+
+# functions
+error_mes() {
+  if [ "${USECOLOR}" == "yes" ]; then
+    local _red='\e[0;31m'
+    local _bwhite='\e[1;37m'
+    local _cclose='\e[0m'
+  fi
+  case "${1}" in
+    "config"    ) echo "${_red}[EE] ${_bwhite}Configuration file is not set${_cclose}" ;;
+    "file"      ) echo "${_red}[EE] ${_bwhite}'${2}' is a file${_cclose}"              ;;
+    "unknown"   ) echo "${_red}[EE] ${_bwhite}Unknown error${_cclose}"                 ;;
+    "flag"      ) echo "${_red}[EE] ${_bwhite}Unknown flag${_cclose}"                  ;;
+  esac
+  exit 1
+}
+
+func_help() {
+  echo -e "Script written on BASH to sync repositories between folder or servers"
+  echo -e "\nUsage: repo-sync [ -c /etc/repo-scripts.conf ] [ -v | --version ] [ -h | --help ]"
+  echo -e "\nParametrs:"
+  echo -e "  -c               PATH     - path to configuration file. Default is
+                              '/etc/repo-scripts.conf'"
+  echo -e "       --nocolor            - force disable colors"
+  echo -e "\n  -v   --version            - show version and exit"
+  echo -e "  -h   --help               - show this help and exit"
+  exit 0
+}
+
+func_ver() {
+  echo -e "                                   repo-sync                                    "
+  echo -e "A set of scripts to work with your repository                                   "
+  echo -e "Version : 1.5.3                                                  License : GPLv3"
+  echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
+  echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
+  exit 0
+}
+
+func_upload_new_packages() {
+
+
+	exit 0;
+}
+
+CMD_NOCOLOR="no"
+CONF_FILE="/etc/repo-scripts.conf"
+
+# parametrs parsing
+until [ -z $1 ]; do
+  case "$1" in
+    "-h" | "--help"    ) func_help                                                        ;;
+    "-v" | "--version" ) func_ver                                                         ;;
+    "-c"               ) [ -z "${2}" ] && error_mes "config" || CONF_FILE="${2}" && shift ;;
+    "--nocolor"        ) CMD_NOCOLOR="yes"                                                ;;
+    *                  ) error_mes "flag"                                                 ;;
+  esac
+  shift
+done
+
+# default values
+ARCHS="i686 x86_64"
+DBNAME="custom"
+REPODIR="${HOME}/arch/repo"
+SYMLINK="no"
+USECOLOR="yes"
+
+#Default Sync Values
+ENABLESYNC="yes"
+REMOTESYNC="${HOME}/arch/reposync"
+
+echo -e "[II] Reading configuration from '${CONF_FILE}'"
+source "${CONF_FILE}"
+[ "${CMD_NOCOLOR}" == "yes" ] && USECOLOR="no"
+if [ "${USECOLOR}" == "yes" ]; then
+  bblue='\e[1;34m'
+  bwhite='\e[1;37m'
+  cclose='\e[0m'
+fi
+export USECOLOR
+
+# error checking
+if [ ! -d "${REPODIR}" ]; then
+  [ -e "${REPODIR}" ] && error_mes "file" "${REPODIR}"
+  echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${REPODIR}'${cclose}"
+  /usr/bin/mkdir -p "${REPODIR}" || error_mes "unknown"
+fi
+for ARCH in ${ARCHS}; do
+  if [ ! -d "${REPODIR}/${ARCH}" ]; then
+    [ -e "${REPODIR}/${ARCH}" ] && error_mes "file" "${REPODIR}/${ARCH}"
+    echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${REPODIR}/${ARCH}'${cclose}"
+    /usr/bin/mkdir -p "${REPODIR}/${ARCH}" || error_mes "unknown"
+  fi
+done
+
+#Files To Exclude
+EXCLUDESYNC=".*"
+EXCLUDEDATABASE="${DBNAME}.d*"
+EXCLUDEFILES="${DBNAME}.file*"
+
+echo -e "[II] Repository Sync Enabled"
+echo -e "[II] Synchronize new packages"
+/usr/bin/rsync -r --progress -h -z -v -s --exclude=${EXCLUDESYNC} --exclude=${EXCLUDEDATABASE} --exclude=${EXCLUDEFILES} "${REPODIR}/" "${REMOTESYNC}"
+echo -e "[II] Synchronize database and delete old packages"
+/usr/bin/rsync -r -H -l --progress --delete -h -z -v -s --exclude=${EXCLUDESYNC} "${REPODIR}/" "${REMOTESYNC}/"
