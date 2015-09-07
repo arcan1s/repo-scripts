@@ -61,23 +61,6 @@ func_remove() {
   /usr/bin/rm -f "${_PACKAGE}"{,.sig}
 }
 
-REPOx86=false;
-REPOx64=false;
-
-#Check repo archs
-func_check_archs() {
-	for ARCH in ${ARCHS}; do
-		if [ "$ARCH" = "i686" ]; then
-			REPOx86=true;
-		fi;
-		if [ "$ARCH" = "x86_64" ]; then
-			REPOx64=true;
-		fi;
-	done;
-}
-
-export -f func_check_archs;
-
 func_build() {
   if [ "${USECOLOR}" == "yes" ]; then
     local _bblue='\e[1;34m'
