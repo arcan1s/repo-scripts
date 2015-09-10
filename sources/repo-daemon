@@ -76,6 +76,7 @@ REMOTEHOST="root@localhost:/var/www/html/"
 REMOTELOG="root@localhost:/var/log/build-repo.log"
 REPOPATH="ftp://localhost/repo/"
 REPODIR="${HOME}/arch/repo/"
+ENABLESYNC="no"
 echo -e "[II] Reading configuration from '${CONF_FILE}'"
 source "${CONF_FILE}"
 
@@ -102,6 +103,10 @@ while true; do
     CHECK_VCS=$((${CHECK_VCS}+1))
   fi
   [[ ${CHECK_VCS} == 65535 ]] && CHECK_VCS=0
+
+  if [ ${ENABLESYNC} == "yes"] then:
+	/usr/bin/repo-sync -c ${CONF_FILE} &>> "${LOGDIR}/${LOGFILE}"
+  fi
   if [ "${ENABLEREPORT}" == "yes" ]; then
     echo -e "[II] Send report"
     for ARCH in ${ARCHS}; do
