@@ -55,12 +55,6 @@ func_ver() {
   exit 0
 }
 
-func_upload_new_packages() {
-
-
-	exit 0;
-}
-
 CMD_NOCOLOR="no"
 CONF_FILE="/etc/repo-scripts.conf"
 
@@ -80,7 +74,6 @@ done
 ARCHS="i686 x86_64"
 DBNAME="custom"
 REPODIR="${HOME}/arch/repo"
-SYMLINK="no"
 USECOLOR="yes"
 
 #Default Sync Values
