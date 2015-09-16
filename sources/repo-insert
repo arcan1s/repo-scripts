@@ -1,0 +1,131 @@
+#!/bin/bash
+#     repo-scripts is a set of scripts to work with your repository
+#     Copyright (C) 2014 Evgeniy Alekseev
+#
+#     This program is free software; you can redistribute it and/or modify
+#     it under the terms of the GNU General Public License as published by
+#     the Free Software Foundation; either version 3 of the License, or
+#     (at your option) any later version.
+#
+#     This program is distributed in the hope that it will be useful,
+#     but WITHOUT ANY WARRANTY; without even the implied warranty of
+#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#     GNU General Public License for more details.
+#
+#     You should have received a copy of the GNU General Public License
+#     along with this program; if not, see http://www.gnu.org/licenses
+#     or write to the Free Software Foundation,Inc., 51 Franklin Street,
+#     Fifth Floor, Boston, MA 02110-1301  USA
+
+
+# functions
+error_mes() {
+  if [ "${USECOLOR}" == "yes" ]; then
+    local _red='\e[0;31m'
+    local _bwhite='\e[1;37m'
+    local _cclose='\e[0m'
+  fi
+  case "${1}" in
+    "config"    ) echo "${_red}[EE] ${_bwhite}Configuration file is not set${_cclose}" ;;
+    "file"      ) echo "${_red}[EE] ${_bwhite}'${2}' is a file${_cclose}"              ;;
+    "unknown"   ) echo "${_red}[EE] ${_bwhite}Unknown error${_cclose}"                 ;;
+    "package"   ) echo "${_red}[EE] ${_bwhite}Not found the package '${2}'${_cclose}"  ;;
+  esac
+  exit 1
+}
+
+func_help() {
+  echo -e "Script written on BASH to add a package in the repository"
+  echo -e "Usage: repo-insert [ -c /etc/repo-scripts.conf ] [ -d | --no-update ] [ -s | --check ] [ -v | --version ] [ -h | --help ] PACKAGE1 PACKAGE2 ..."
+  echo -e "Parametrs:"
+  echo -e "  PACKAGE1 PACKAGE2 ...     - Packages to add"
+  echo -e "  -c               PATH     - Path to configuration file. Default is '/etc/repo-scripts.conf'"
+  echo -e "  -h   --help               - Show this help and exit"
+  echo -e "  -d   --no-update          - No update the repository"
+  echo -e "  -s	  --check              - Check the repository after add package"
+  echo -e "       --nocolor            - Force disable colors"
+  echo -e "  -v   --version            - Show version and exit"
+  echo -e "  -h   --help               - Show this help and exit"
+  exit 0
+}
+
+func_ver() {
+  echo -e "repo-scripts"
+  echo -e "A set of scripts to work with your archlinux repository"
+  echo -e "Version : 1.5.3"
+  echo -e "License : GPLv3"
+  echo -e "Author : Evgeniy Alexeev aka arcanis"
+  echo -e "E-mail : esalexeev (at) gmail (dot) com"
+  exit 0
+}
+
+
+CMD_NOCOLOR="no"
+CONF_FILE="/etc/repo-scripts.conf"
+PKGLIST=()
+UPDATEREPO="true"
+CHECKREPO="false"
+
+# parametrs parsing
+until [ -z $1 ]; do
+  case "$1" in
+    "-d" | "--no-update"    ) UPDATEREPO="false"                                               ;;
+    "-s" | "--check"        ) CHECKREPO="true"                                                 ;;
+    "-h" | "--help"         ) func_help                                                        ;;
+    "-v" | "--version"      ) func_ver                                                         ;;
+    "-c"                    ) [ -z "${2}" ] && error_mes "config" || CONF_FILE="${2}" && shift ;;
+    "--nocolor"             ) CMD_NOCOLOR="yes"                                                ;;
+    *                       ) PKGLIST+=("${1}")                                                ;;
+  esac
+  shift
+done
+
+# default values
+STAGINGDIR="${HOME}/arch/staging"
+USECOLOR="yes"
+
+source "${CONF_FILE}"
+
+[ "${CMD_NOCOLOR}" == "yes" ] && USECOLOR="no"
+if [ "${USECOLOR}" == "yes" ]; then
+  bblue='\e[1;34m'
+  bwhite='\e[1;37m'
+  cclose='\e[0m'
+fi
+
+echo -e "${bwhite}[II] ${bblue}Read configuration from ${bwhite}'${CONF_FILE}'${cclose}"
+
+# Error check
+if [ ! -d "${STAGINGDIR}" ]; then
+  [ -e "${STAGINGDIR}" ] && error_mes "file" "${STAGINGDIR}"
+  echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${STAGINGDIR}'${cclose}"
+  /usr/bin/mkdir -p "${STAGINGDIR}" || error_mes "unknown"
+fi
+
+
+cd "${STAGINGDIR}"
+for PKGNAME in ${PKGLIST[@]}; do
+	/usr/bin/yaourt -G "${PKGNAME}"
+	if [ ! -d "${PKGNAME}" ]; then
+		error_mes "package" "${PKGNAME}"
+	else
+		echo -e "${bwhite}[II]${cclose} Added package ${bwhite}${PKGNAME}${cclose}"
+		if [ "${UPDATEREPO}" == "true" ]; then
+			if [ "${CMD_NOCOLOR}" == "yes" ]; then
+				/usr/bin/repo-update --nocolor -c "${CONF_FILE}"
+			else
+				/usr/bin/repo-update -c "${CONF_FILE}"
+			fi
+		elif [ "${CHECKREPO}" == "true" ]; then
+			if [ "${CMD_NOCOLOR}" == "yes" ]; then
+				/usr/bin/repo-check --nocolor -c "${CONF_FILE}"
+			else
+				/usr/bin/repo-check -c "${CONF_FILE}"
+			fi
+		fi
+	fi
+done
+
+
+
+

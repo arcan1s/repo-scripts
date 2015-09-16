@@ -15,6 +15,7 @@ install -Dm755 "usr/bin/repo-clear" "${DESTDIR}/usr/bin/repo-clear" || func_erro
 install -Dm755 "usr/bin/repo-daemon" "${DESTDIR}/usr/bin/repo-daemon" || func_error
 install -Dm755 "usr/bin/repo-update" "${DESTDIR}/usr/bin/repo-update" || func_error
 install -Dm755 "usr/bin/repo-sync"   "${DESTDIR}/usr/bin/repo-sync" || func_error
+install -Dm755 "usr/bin/repo-insert"   "${DESTDIR}/usr/bin/repo-insert" || func_error
 install -Dm644 "etc/repo-scripts.conf" "${DESTDIR}/etc/repo-scripts.conf" || func_error
 install -Dm644 "usr/lib/systemd/system/repo-daemon.service" "${DESTDIR}/usr/lib/systemd/system/repo-daemon.service" || func_error
 
