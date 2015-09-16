@@ -29,14 +29,14 @@ error_mes() {
     "config"    ) echo "${_red}[EE] ${_bwhite}Configuration file is not set${_cclose}" ;;
     "file"      ) echo "${_red}[EE] ${_bwhite}'${2}' is a file${_cclose}"              ;;
     "unknown"   ) echo "${_red}[EE] ${_bwhite}Unknown error${_cclose}"                 ;;
-    "flag"      ) echo "${_red}[EE] ${_bwhite}Unknown flag${_cclose}"                  ;;
+    "package"   ) echo "${_red}[EE] ${_bwhite}Not found the package '${2}'${_cclose}"  ;;
   esac
   exit 1
 }
 
 func_help() {
   echo -e "Script written on BASH to add a package in the repository"
-  echo -e "Usage: repo-insert [ -c /etc/repo-scripts.conf ] [ -v | --version ] [ -h | --help ] PACKAGE1 PACKAGE2 ..."
+  echo -e "Usage: repo-insert [ -c /etc/repo-scripts.conf ] [ -d | --no-update ] [ -s | --check ] [ -v | --version ] [ -h | --help ] PACKAGE1 PACKAGE2 ..."
   echo -e "Parametrs:"
   echo -e "  PACKAGE1 PACKAGE2 ...     - Packages to add"
   echo -e "  -c               PATH     - Path to configuration file. Default is '/etc/repo-scripts.conf'"
@@ -84,14 +84,16 @@ done
 STAGINGDIR="${HOME}/arch/staging"
 USECOLOR="yes"
 
-echo -e "[II] Reading configuration from '${CONF_FILE}'"
 source "${CONF_FILE}"
+
 [ "${CMD_NOCOLOR}" == "yes" ] && USECOLOR="no"
 if [ "${USECOLOR}" == "yes" ]; then
   bblue='\e[1;34m'
   bwhite='\e[1;37m'
   cclose='\e[0m'
 fi
+
+echo -e "${bwhite}[II] ${bblue}Read configuration from ${bwhite}'${CONF_FILE}'${cclose}"
 
 # Error check
 if [ ! -d "${STAGINGDIR}" ]; then
@@ -103,22 +105,22 @@ fi
 
 cd "${STAGINGDIR}"
 for PKGNAME in ${PKGLIST[@]}; do
-	/usr/bin/yaourt -G ${PKGNAME}
+	/usr/bin/yaourt -G "${PKGNAME}"
 	if [ ! -d "${PKGNAME}" ]; then
-		echo -e "${bwhite}[II]${cclose} Not found the package ${bwhite}${PKGNAME}${cclose}"
+		error_mes "package" "${PKGNAME}"
 	else
 		echo -e "${bwhite}[II]${cclose} Added package ${bwhite}${PKGNAME}${cclose}"
-		if [ ${UPDATEREPO} == "true" ]; then
+		if [ "${UPDATEREPO}" == "true" ]; then
 			if [ "${CMD_NOCOLOR}" == "yes" ]; then
-				/usr/bin/repo-update --nocolor -c ${CONF_FILE}
+				/usr/bin/repo-update --nocolor -c "${CONF_FILE}"
 			else
-				/usr/bin/repo-update -c ${CONF_FILE}
+				/usr/bin/repo-update -c "${CONF_FILE}"
 			fi
-		elif [ ${CHECKREPO} == "true" ]; then
+		elif [ "${CHECKREPO}" == "true" ]; then
 			if [ "${CMD_NOCOLOR}" == "yes" ]; then
-				/usr/bin/repo-check --nocolor -c ${CONF_FILE}
+				/usr/bin/repo-check --nocolor -c "${CONF_FILE}"
 			else
-				/usr/bin/repo-check -c ${CONF_FILE}
+				/usr/bin/repo-check -c "${CONF_FILE}"
 			fi
 		fi
 	fi
