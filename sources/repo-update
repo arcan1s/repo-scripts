@@ -31,7 +31,7 @@ error_mes() {
     "flag"      ) echo "${_red}[EE] ${_bwhite}Unknown flag${_cclose}"                   ;;
     "lock"      ) echo "${_red}[EE] ${_bwhite}The process is already running${_cclose}" ;;
     "unknown"   ) echo "${_red}[EE] ${_bwhite}Unknown error${_cclose}"                  ;;
-    "gpg"   	) echo "${_red}[EE] ${_bwhite}Sign gpg error${_cclose}"                 ;;
+    "gpg"       ) echo "${_red}[EE] ${_bwhite}Sign gpg error${_cclose}"                 ;;
   esac
   exit 1
 }
@@ -51,7 +51,7 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-update                                  "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.5.3                                                  License : GPLv3"
+  echo -e "Version : 1.6.0                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
@@ -166,11 +166,7 @@ if [ "${USEGPG}" == "yes" ]; then
   echo -e "${bwhite}[II]${cclose} Signing"
   cd "${PREPAREDIR}"
   for PACKAGE in $(/usr/bin/find . -name '*.pkg.tar.xz'); do
-    	if /usr/bin/gpg -b "${PACKAGE}"; then
-    		echo "Signed ${PACKAGE}"
-    	else
-    		error_mes "gpg"
-    	fi
+    /usr/bin/gpg -b "${PACKAGE}" && echo "Signed ${PACKAGE}" || error_mes "gpg"
   done
 fi
 

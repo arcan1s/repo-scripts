@@ -50,7 +50,7 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-check                                   "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.5.3                                                  License : GPLv3"
+  echo -e "Version : 1.6.0                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0

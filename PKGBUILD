@@ -1,15 +1,15 @@
-# Maintainer: Evgeniy "arcanis" Alexeev <esalexeev@gmail.com>
+# Maintainer: Evgeniy "arcanis" Alexeev <arcanis at archlinux dot org>
 
 pkgname=repo-scripts
-pkgver=1.5.3
-pkgrel=2
+pkgver=1.6.0
+pkgrel=1
 pkgdesc="A set of scripts to work with your repository"
 arch=('any')
 url="https://github.com/arcan1s/repo-scripts"
 license=("GPLv3")
-depends=('yaourt' 'devtools')
+depends=('devtools' 'yaourt')
 source=(https://github.com/arcan1s/repo-scripts/releases/download/V.${pkgver}/${pkgname}-${pkgver}-src.tar.xz)
-md5sums=('124365b35311d209cbd2d8e7458ab1da')
+md5sums=('d8f837a936465a75c22b7b81869b8e35')
 
 backup=('etc/repo-scripts.conf')
 

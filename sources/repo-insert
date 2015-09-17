@@ -36,26 +36,26 @@ error_mes() {
 
 func_help() {
   echo -e "Script written on BASH to add a package in the repository"
-  echo -e "Usage: repo-insert [ -c /etc/repo-scripts.conf ] [ -d | --no-update ] [ -s | --check ] [ -v | --version ] [ -h | --help ] PACKAGE1 PACKAGE2 ..."
-  echo -e "Parametrs:"
-  echo -e "  PACKAGE1 PACKAGE2 ...     - Packages to add"
-  echo -e "  -c               PATH     - Path to configuration file. Default is '/etc/repo-scripts.conf'"
-  echo -e "  -h   --help               - Show this help and exit"
-  echo -e "  -d   --no-update          - No update the repository"
-  echo -e "  -s	  --check              - Check the repository after add package"
-  echo -e "       --nocolor            - Force disable colors"
-  echo -e "  -v   --version            - Show version and exit"
-  echo -e "  -h   --help               - Show this help and exit"
+  echo -e "\nUsage: repo-insert [ -c /etc/repo-scripts.conf ] [ -d | --no-update ] [ -s | --check ]"
+  echo -e "                   [ -v | --version ] [ -h | --help ] PACKAGE1 PACKAGE2 ..."
+  echo -e "\nParametrs:"
+  echo -e "  PACKAGE1 PACKAGE2 ...     - packages to add"
+  echo -e "  -c               PATH     - path to configuration file. Default is
+                              '/etc/repo-scripts.conf'"
+  echo -e "  -d   --no-update          - no update the repository"
+  echo -e "  -s   --check              - check the repository after add package"
+  echo -e "       --nocolor            - force disable colors"
+  echo -e "\n  -v   --version            - show version and exit"
+  echo -e "  -h   --help               - show this help and exit"
   exit 0
 }
 
 func_ver() {
-  echo -e "repo-scripts"
-  echo -e "A set of scripts to work with your archlinux repository"
-  echo -e "Version : 1.5.3"
-  echo -e "License : GPLv3"
-  echo -e "Author : Evgeniy Alexeev aka arcanis"
-  echo -e "E-mail : esalexeev (at) gmail (dot) com"
+  echo -e "                                   repo-insert                                  "
+  echo -e "A set of scripts to work with your repository                                   "
+  echo -e "Version : 1.6.0                                                  License : GPLv3"
+  echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
+  echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
 }
 
@@ -104,26 +104,19 @@ fi
 
 
 cd "${STAGINGDIR}"
+[ "${CMD_NOCOLOR}" == "yes" ] && NOCOLORFLAG="--nocolor" || NOCOLORFLAG=""
 for PKGNAME in ${PKGLIST[@]}; do
-	/usr/bin/yaourt -G "${PKGNAME}"
-	if [ ! -d "${PKGNAME}" ]; then
-		error_mes "package" "${PKGNAME}"
-	else
-		echo -e "${bwhite}[II]${cclose} Added package ${bwhite}${PKGNAME}${cclose}"
-		if [ "${UPDATEREPO}" == "true" ]; then
-			if [ "${CMD_NOCOLOR}" == "yes" ]; then
-				/usr/bin/repo-update --nocolor -c "${CONF_FILE}"
-			else
-				/usr/bin/repo-update -c "${CONF_FILE}"
-			fi
-		elif [ "${CHECKREPO}" == "true" ]; then
-			if [ "${CMD_NOCOLOR}" == "yes" ]; then
-				/usr/bin/repo-check --nocolor -c "${CONF_FILE}"
-			else
-				/usr/bin/repo-check -c "${CONF_FILE}"
-			fi
-		fi
-	fi
+  /usr/bin/yaourt -G "${PKGNAME}"
+  if [ ! -d "${PKGNAME}" ]; then
+    error_mes "package" "${PKGNAME}"
+  else
+    echo -e "${bwhite}[II]${cclose} Added package ${bwhite}${PKGNAME}${cclose}"
+    if [ "${CHECKREPO}" == "true" ]; then
+      /usr/bin/repo-check "${NOCOLORFLAG}" -c "${CONF_FILE}"
+    elif [ "${UPDATEREPO}" == "true" ]; then
+      /usr/bin/repo-update "${NOCOLORFLAG}" -c "${CONF_FILE}"
+    fi
+  fi
 done
 
 
