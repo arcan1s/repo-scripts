@@ -31,6 +31,7 @@ error_mes() {
     "flag"      ) echo "${_red}[EE] ${_bwhite}Unknown flag${_cclose}"                   ;;
     "lock"      ) echo "${_red}[EE] ${_bwhite}The process is already running${_cclose}" ;;
     "unknown"   ) echo "${_red}[EE] ${_bwhite}Unknown error${_cclose}"                  ;;
+    "gpg"   	) echo "${_red}[EE] ${_bwhite}Sign gpg error${_cclose}"                 ;;
   esac
   exit 1
 }
@@ -159,12 +160,17 @@ echo -e "${bwhite}[II]${cclose} Building packages"
 cd "${STAGINGDIR}"
 /usr/bin/find -name 'PKGBUILD' -type f -execdir /usr/bin/bash -c "func_build "${PREPAREDIR}" "${ROOTDIR}"" \;
 
-# signing
+
+# Signing
 if [ "${USEGPG}" == "yes" ]; then
   echo -e "${bwhite}[II]${cclose} Signing"
   cd "${PREPAREDIR}"
   for PACKAGE in $(/usr/bin/find . -name '*.pkg.tar.xz'); do
-    /usr/bin/gpg -b "${PACKAGE}"
+    	if /usr/bin/gpg -b "${PACKAGE}"; then
+    		echo "Signed ${PACKAGE}"
+    	else
+    		error_mes "gpg"
+    	fi
   done
 fi
 
