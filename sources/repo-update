@@ -145,54 +145,30 @@ for PACKAGE in $(/usr/bin/find -name 'PKGBUILD' -type f); do
     #Get PKGBUILD
     source PKGBUILD
     echo -e "${bwhite}[II] ${bblue}=>${cclose} Building ${bwhite}${pkgname}${cclose}"
-    #Build for repo architecture
-    for ARCH in ${ARCHS}; do
-    	#Build for package architecture
-	for _ARCHS in ${arch[@]}; do
-		# Build if package is any architecture
-		if [[ ${_ARCHS} =~ any ]]; then
-        			echo -e "${bwhite}[III] ${bblue}=>${cclose} Build using default tools${cclose}";
-      				LC_MESSAGES=C /usr/bin/sudo ${TOOLSDEFAULT} -r ${ROOTDIR} ${RECHROOT}
-    		else
-    			# Build if package is a lib32 type
-	 		if [[ ${pkgname} =~ lib32 ]]; then
-	 			# Build if repo architecture is equal the package architecture
-      				if [ ${ARCH} == "i686" ] && [ ${_ARCHS} == "i686" ]; then
-      					echo -e "${bwhite}[III] ${bblue}=>${cclose} Build using i686 tools$cclose}";
-      					LC_MESSAGES=C /usr/bin/sudo ${TOOLSI686} -r ${ROOTDIR} ${RECHROOT}
-      				fi
-      				if [ ${ARCH} == "x86_64" ] && [ ${_ARCHS} == "x86_64" ]; then
-      					echo -e "${bwhite}[III] ${bblue}=>${cclose} Build using multilib tools${cclose}";
+    PKGARCHS="${arch[@]}"
+    # Build if package is any architecture
+    if [[ ${PKGARCHS} =~ any ]]; then
+    	echo -e "${bwhite}[III] ${bblue}=>${cclose} Build using default tools${cclose}";
+      	LC_MESSAGES=C /usr/bin/sudo ${TOOLSDEFAULT} -r ${ROOTDIR} ${RECHROOT}
+    else
+    	#Build for repo architecture
+    	for ARCH in ${ARCHS}; do
+    		#Build for package architecture
+		for _ARCHS in ${PKGARCHS}; do
+			if [[ ${ARCH} == ${_ARCHS} ]]; then
+				TOOLCHAIN="TOOLS${ARCH}"
+				# Build if package is a lib32 type or depends of lib32 package or multilib package
+				if [ ${ARCH} == "x86_64" ] && ( [[ ${pkgname} =~ lib32 ]] || /usr/bin/grep 'lib32' PKGBUILD -q || /usr/bin/grep 'multilib' PKGBUILD -q ); then
+					echo -e "${bwhite}[III] ${bblue}=>${cclose} Build using multilib tools${cclose}";
       					LC_MESSAGES=C /usr/bin/sudo ${TOOLSMULTILIB} -r ${ROOTDIR} ${RECHROOT}
-      				fi
-    			else
-    				# Build if package depends of lib32 package or multilib package
-      				if /usr/bin/grep 'lib32' PKGBUILD -q || /usr/bin/grep 'multilib' PKGBUILD -q; then
-      					# Build if repo architecture is equal the package architecture
-        				if [ ${ARCH} == "i686" ] && [ ${_ARCHS} == "i686" ]; then
-        					echo -e "${bwhite}[III] ${bblue}=>${cclose} Build using i686 tools${cclose}";
-						LC_MESSAGES=C /usr/bin/sudo ${TOOLSI686} -r ${ROOTDIR} ${RECHROOT}
-      					fi
-      					if [ ${ARCH} == "x86_64" ] && [ ${_ARCHS} == "x86_64" ]; then
-      						echo -e "${bwhite}[III] ${bblue}=>${cclose} Build using multilib tools${cclose}";
-      						LC_MESSAGES=C /usr/bin/sudo ${TOOLSMULTILIB} -r ${ROOTDIR} ${RECHROOT}
-      					fi
-      				else
-      					# Build if is a normal package
-      					# Build if repo architecture is equal the package architecture
-        				if [ ${ARCH} == "i686" ] && [ ${_ARCHS} == "i686" ]; then
-        					echo -e "${bwhite}[III] ${bblue}=>${cclose} Build using i686 tools${cclose}";
-      						LC_MESSAGES=C /usr/bin/sudo ${TOOLSI686} -r ${ROOTDIR} ${RECHROOT}
-      					fi
-      					if [ ${ARCH} == "x86_64" ] && [ ${_ARCHS} == "x86_64" ]; then
-      						echo -e "${bwhite}[III] ${bblue}=>${cclose} Build using x86_64 tools${cclose}";
-      						LC_MESSAGES=C /usr/bin/sudo ${TOOLSX64} -r ${ROOTDIR} ${RECHROOT}
-      					fi
-      				fi
-    			fi
-    		fi
-	done
-    done
+				else
+					echo -e "${bwhite}[III] ${bblue}=>${cclose} Build using ${ARCH} tools${cclose}";
+      					LC_MESSAGES=C /usr/bin/sudo ${!TOOLCHAIN} -r ${ROOTDIR} ${RECHROOT}
+				fi
+			fi
+		done
+    	done
+    fi
     #Copy build packages
     /usr/bin/cp *.pkg.tar.xz "${PREPAREDIR}" 2> /dev/null
 done
