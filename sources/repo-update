@@ -40,11 +40,11 @@ func_help() {
   echo -e "\nUsage: repo-update [ -c /etc/repo-scripts.conf ] [ --nocolor ] [ -f | --force ]"
   echo -e "                                            [ -v | -- version ] [ -h | --help ]"
   echo -e "\nParametrs:"
-  echo -e "  -c               PATH     - path to configuration file. Default is
-                              '/etc/repo-scripts.conf'"
+  echo -e "  -c               PATH     - path to configuration file. Default is '/etc/repo-scripts.conf'"
   echo -e "       --nocolor            - force disable colors"
+  echo -e "  -n   --no-recreate        - No recreate the chroot"
   echo -e "  -f   --force              - force if lock file exist"
-  echo -e "\n  -v   --version            - show version and exit"
+  echo -e "  -v   --version            - show version and exit"
   echo -e "  -h   --help               - show this help and exit"
   exit 0
 }
@@ -60,38 +60,12 @@ func_remove() {
   local _PACKAGE="${1}"
   /usr/bin/rm -f "${_PACKAGE}"{,.sig}
 }
-func_build() {
-  if [ "${USECOLOR}" == "yes" ]; then
-    local _bblue='\e[1;34m'
-    local _bwhite='\e[1;37m'
-    local _cclose='\e[0m'
-  fi
-  local _PREPAREDIR="${1}"
-  local _ROOTDIR="${2}"
-  source PKGBUILD
-  echo -e "${_bwhite}[II] ${_bblue}=>${_cclose} Building ${_bwhite}${pkgname}${_cclose}"
-  if [[ ${arch} =~ any ]]; then
-    LC_MESSAGES=C /usr/bin/sudo /usr/bin/extra-i686-build -r "${_ROOTDIR}" -c
-  else
-    if [[ ${pkgname} =~ lib32 ]]; then
-      LC_MESSAGES=C /usr/bin/sudo /usr/bin/multilib-build -r "${_ROOTDIR}" -c
-    else
-      if /usr/bin/grep 'lib32' PKGBUILD -q; then
-        LC_MESSAGES=C /usr/bin/sudo /usr/bin/extra-i686-build -r "${_ROOTDIR}" -c
-        LC_MESSAGES=C /usr/bin/sudo /usr/bin/multilib-build -r "${_ROOTDIR}" -c
-      else
-        LC_MESSAGES=C /usr/bin/sudo /usr/bin/extra-i686-build -r "${_ROOTDIR}" -c
-        LC_MESSAGES=C /usr/bin/sudo /usr/bin/extra-x86_64-build -r "${_ROOTDIR}" -c
-      fi
-    fi
-  fi
-  /usr/bin/cp *.pkg.tar.xz "${_PREPAREDIR}" 2> /dev/null
-}
-export -f func_build
 
 CMD_FORCE="no"
 CMD_NOCOLOR="no"
 CONF_FILE="/etc/repo-scripts.conf"
+#Recreate the chroot
+RECHROOT="-c"
 # parametrs parsing
 until [ -z ${1} ]; do
   case "${1}" in
@@ -100,6 +74,7 @@ until [ -z ${1} ]; do
     "-c"               ) [ -z "${2}" ] && error_mes "config" || CONF_FILE="${2}" && shift ;;
     "--nocolor"        ) CMD_NOCOLOR="yes"                                                ;;
     "-f" | "--force"   ) CMD_FORCE="yes"                                                  ;;
+    "-n" | "--no-recreate" ) RECHROOT=""                                                  ;;
     *                  ) error_mes "flag"                                                 ;;
   esac
   shift
@@ -108,13 +83,17 @@ done
 ARCHS="i686 x86_64"
 DBNAME="custom"
 LOCKFILE="/tmp/repo-update.lock"
-PREPAREDIR="${HOME}/arch/prepare/"
-REPODIR="${HOME}/arch/repo/"
-ROOTDIR="${HOME}/arch/root/"
-STAGINGDIR="${HOME}/arch/staging/"
+PREPAREDIR="${HOME}/arch/prepare"
+REPODIR="${HOME}/arch/repo"
+ROOTDIR="${HOME}/arch/root"
+STAGINGDIR="${HOME}/arch/staging"
 SYMLINK="no"
 USECOLOR="yes"
 USEGPG="yes"
+TOOLSDEFAULT="/usr/bin/extra-i686-build"
+TOOLSi686="/usr/bin/extra-i686-build"
+TOOLSx86_64="/usr/bin/extra-x86_64-build"
+TOOLSMULTILIB="/usr/bin/multilib-build"
 echo -e "[II] Reading configuration from '${CONF_FILE}'"
 source "${CONF_FILE}"
 [ "${CMD_NOCOLOR}" == "yes" ] && USECOLOR="no"
@@ -154,11 +133,45 @@ fi
 [ -e "${LOCKFILE}" ] && error_mes "lock"
 /usr/bin/touch "${LOCKFILE}" 2> /dev/null || /usr/bin/true
 
-## work block
-# building
+## Work block
+# Building
 echo -e "${bwhite}[II]${cclose} Building packages"
 cd "${STAGINGDIR}"
-/usr/bin/find -name 'PKGBUILD' -type f -execdir /usr/bin/bash -c "func_build "${PREPAREDIR}" "${ROOTDIR}"" \;
+#Get package list in staging folder
+for PACKAGE in $(/usr/bin/find -name 'PKGBUILD' -type f); do
+    cd "${STAGINGDIR}"
+    #Get package folder
+    cd $(dirname "${PACKAGE}")
+    #Get PKGBUILD
+    source PKGBUILD
+    echo -e "${bwhite}[II] ${bblue}=>${cclose} Building ${bwhite}${pkgname}${cclose}"
+    PKGARCHS="${arch[@]}"
+    # Build if package is any architecture
+    if [[ ${PKGARCHS} =~ any ]]; then
+    	echo -e "${bwhite}[III] ${bblue}=>${cclose} Build using default tools${cclose}";
+      	LC_MESSAGES=C /usr/bin/sudo ${TOOLSDEFAULT} -r ${ROOTDIR} ${RECHROOT}
+    else
+    	#Build for repo architecture
+    	for ARCH in ${ARCHS}; do
+    		#Build for package architecture
+		for _ARCHS in ${PKGARCHS}; do
+			if [[ ${ARCH} == ${_ARCHS} ]]; then
+				TOOLCHAIN="TOOLS${ARCH}"
+				# Build if package is a lib32 type or depends of lib32 package or multilib package
+				if [ ${ARCH} == "x86_64" ] && ( [[ ${pkgname} =~ lib32 ]] || /usr/bin/grep 'lib32' PKGBUILD -q || /usr/bin/grep 'multilib' PKGBUILD -q ); then
+					echo -e "${bwhite}[III] ${bblue}=>${cclose} Build using multilib tools${cclose}";
+      					LC_MESSAGES=C /usr/bin/sudo ${TOOLSMULTILIB} -r ${ROOTDIR} ${RECHROOT}
+				else
+					echo -e "${bwhite}[III] ${bblue}=>${cclose} Build using ${ARCH} tools${cclose}";
+      					LC_MESSAGES=C /usr/bin/sudo ${!TOOLCHAIN} -r ${ROOTDIR} ${RECHROOT}
+				fi
+			fi
+		done
+    	done
+    fi
+    #Copy build packages
+    /usr/bin/cp *.pkg.tar.xz "${PREPAREDIR}" 2> /dev/null
+done
 
 
 # Signing
@@ -170,52 +183,41 @@ if [ "${USEGPG}" == "yes" ]; then
   done
 fi
 
-# creating packages list
-cd "${PREPAREDIR}"
-[[ "${ARCHS}" =~ "i686" ]] && i686_PACKAGES=$(/usr/bin/find . -name '*-i686.pkg.tar.xz' -o -name '*-any.pkg.tar.xz')
-[[ "${ARCHS}" =~ "x86_64" ]] && x86_64_PACKAGES=$(/usr/bin/find . -name '*-x86_64.pkg.tar.xz' -o -name '*-any.pkg.tar.xz')
-echo -e "${bwhite}[II] ${bblue}=>${cclose} i686 packages: \n${bwhite}${i686_PACKAGES}${cclose}"
-echo -e "${bwhite}[II] ${bblue}=>${cclose} x86_64 packages: \n${bwhite}${x86_64_PACKAGES}${cclose}"
-
+# Creating packages list for repo architecture
 for ARCH in ${ARCHS}; do
-  echo -e "${bwhite}[II]${cclose} Updating ${bwhite}${ARCH}${cclose} repo"
-  cd "${REPODIR}/${ARCH}"
-  [ "${ARCH}" == "i686" ] && PKGLIST="${i686_PACKAGES}" || PKGLIST="${x86_64_PACKAGES}"
-  for PACKAGE in ${PKGLIST}; do
-    PKGNAME=$(/usr/bin/package-query -p -f %n "${PREPAREDIR}/${PACKAGE}")
-    for PKG in $(/usr/bin/find . -name "${PKGNAME}"'*.pkg.tar.xz'); do
-      _PKGNAME=$(/usr/bin/package-query -p -f %n "${PKG}")
-      [ "${PKGNAME}" == "${_PKGNAME}" ] && func_remove "${PKG}"
-    done
-    /usr/bin/cp "${PREPAREDIR}/${PACKAGE}" .
-    [ "${USEGPG}" == "yes" ] && /usr/bin/cp "${PREPAREDIR}/${PACKAGE}.sig" .
-    /usr/bin/repo-add "${DBNAME}.db.tar.gz" "${PACKAGE}"
-    /usr/bin/repo-add --files "${DBNAME}.files.tar.gz" "${PACKAGE}"
-  done
+	cd "${PREPAREDIR}"
+	# Get list build packages in prepare folder
+	PACKAGES=$(/usr/bin/find . -name "*-${ARCH}.pkg.tar.xz" -o -name '*-any.pkg.tar.xz')
+	echo -e "${bwhite}[II] ${bblue}=>${cclose} ${ARCH} packages: \n${bwhite}${PACKAGES}${cclose}"
+	echo -e "${bwhite}[II]${cclose} Updating ${bwhite}${ARCH}${cclose} repo"
+	cd "${REPODIR}/${ARCH}"
+	PKGLIST="${PACKAGES}"
+	for PACKAGE in ${PKGLIST}; do
+    		PKGNAME=$(/usr/bin/package-query -p -f %n "${PREPAREDIR}/${PACKAGE}")
+    		for PKG in $(/usr/bin/find . -name "${PKGNAME}"'*.pkg.tar.xz'); do
+      			_PKGNAME=$(/usr/bin/package-query -p -f %n "${PKG}")
+      			[ "${PKGNAME}" == "${_PKGNAME}" ] && func_remove "${PKG}"
+    		done
+    		/usr/bin/cp "${PREPAREDIR}/${PACKAGE}" .
+    		[ "${USEGPG}" == "yes" ] && /usr/bin/cp "${PREPAREDIR}/${PACKAGE}.sig" .
+    		/usr/bin/repo-add "${DBNAME}.db.tar.gz" "${PACKAGE}"
+    		/usr/bin/repo-add --files "${DBNAME}.files.tar.gz" "${PACKAGE}"
+  	done
+  	# Creating symlinks
+	if [ "${SYMLINK}" == "yes" ]; then
+  		echo -e "${bwhite}[II]${cclose} Creating symlinks"
+  		if [ ! -d "${REPODIR}/non-versioned" ]; then
+    			[ -e "${REPODIR}/non-versioned" ] && error_mes "file" "${REPODIR}/non-versioned"
+    			echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${REPODIR}/non-versioned'${cclose}"
+    			/usr/bin/mkdir -p "${REPODIR}/non-versioned" || error_mes "unknown"
+  		fi
+  		cd "${REPODIR}/non-versioned"
+    		for PACKAGE in ${PACKAGES}; do
+      			PKGNAME=$(/usr/bin/package-query -p -f %n "${REPODIR}/${ARCH}/${PACKAGE}")
+      			/usr/bin/ln -sf "../${ARCH}/${PACKAGE}" "${PKGNAME}-${ARCH}.pkg.tar.xz"
+    		done
+  	fi
 done
-
-# creating symlinks
-if [ "${SYMLINK}" == "yes" ]; then
-  echo -e "${bwhite}[II]${cclose} Creating symlinks"
-  if [ ! -d "${REPODIR}/non-versioned" ]; then
-    [ -e "${REPODIR}/non-versioned" ] && error_mes "file" "${REPODIR}/non-versioned"
-    echo -e "${bwhite}[II] ${bblue}Creating directory ${bwhite}'${REPODIR}/non-versioned'${cclose}"
-    /usr/bin/mkdir -p "${REPODIR}/non-versioned" || error_mes "unknown"
-  fi
-  cd "${REPODIR}/non-versioned"
-  if [[ "${ARCHS}" =~ "i686" ]]; then
-    for PACKAGE in ${i686_PACKAGES}; do
-      PKGNAME=$(/usr/bin/package-query -p -f %n "${REPODIR}/i686/${PACKAGE}")
-      /usr/bin/ln -sf "../i686/${PACKAGE}" "${PKGNAME}-i686.pkg.tar.xz"
-    done
-  fi
-  if [[ "${ARCHS}" =~ "x86_64" ]]; then
-    for PACKAGE in ${x86_64_PACKAGES}; do
-      PKGNAME=$(/usr/bin/package-query -p -f %n "${REPODIR}/x86_64/${PACKAGE}")
-      /usr/bin/ln -sf "../x86_64/${PACKAGE}" "${PKGNAME}-x86_64.pkg.tar.xz"
-    done
-  fi
-fi
 
 # clear
 echo -e "${bwhite}[II]${cclose} Clear"
