@@ -135,9 +135,9 @@ done
 # default values
 ARCHS="i686 x86_64"
 IGNORELIST=""
-REPODIR="${HOME}/arch/repo/"
-STAGINGDIR="${HOME}/arch/staging/"
-VCSDIR="${HOME}/arch/vcs/"
+REPODIR="${HOME}/arch/repo"
+STAGINGDIR="${HOME}/arch/staging"
+VCSDIR="${HOME}/arch/vcs"
 USECOLOR="yes"
 echo -e "[II] Reading configuration from '${CONF_FILE}'"
 source "${CONF_FILE}"
