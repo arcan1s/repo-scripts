@@ -135,9 +135,9 @@ done
 # default values
 ARCHS="i686 x86_64"
 IGNORELIST=""
-REPODIR="${HOME}/arch/repo/"
-STAGINGDIR="${HOME}/arch/staging/"
-VCSDIR="${HOME}/arch/vcs/"
+REPODIR="${HOME}/arch/repo"
+STAGINGDIR="${HOME}/arch/staging"
+VCSDIR="${HOME}/arch/vcs"
 USECOLOR="yes"
 echo -e "[II] Reading configuration from '${CONF_FILE}'"
 source "${CONF_FILE}"
@@ -176,36 +176,28 @@ fi
 
 
 ## work block
-IGNORELIST=$(echo "${IGNORELIST}" | sed "s/;;/\\\|/g")
-# update database
+#
+if [ -z ${IGNORELIST} ]; then
+	IGNORELIST="<>"
+else
+	IGNORELIST=$(echo "${IGNORELIST}" | sed "s/;;/ /g")
+fi
+# Update database
 echo -e "${bwhite}[II]${cclose} Updating local database"
 /usr/bin/yaourt -Sy
-# get list
+# Get list
 echo -e "${bwhite}[II]${cclose} Getting list of packages"
-/usr/bin/rm -f "${STAGINGDIR}/pkglist"
 for ARCH in ${ARCHS}; do
   cd "${REPODIR}/${ARCH}"
-  /usr/bin/find . -name '*.pkg.tar.xz' | /usr/bin/grep -v "${IGNORELIST}" | /usr/bin/cut -c 3- >> "${STAGINGDIR}/pkglist"
+  ARCHLIST=$(/usr/bin/find . -name '*.pkg.tar.xz' | /usr/bin/grep -v "${IGNORELIST}" | /usr/bin/cut -c 3- )
+  cd "${STAGINGDIR}"
+	for PACKAGE in ${ARCHLIST[@]}; do
+		PKGNAME=$(/usr/bin/package-query -p -f %n "${REPODIR}/${ARCH}/${PACKAGE}")
+		PKGVER=$(/usr/bin/package-query -p -f %V "${REPODIR}/${ARCH}/${PACKAGE}")
+		echo -e "${bwhite}[II] ${bblue}=>${cclose} Checking ${bwhite}${PKGNAME}${cclose} in ${bwhite}${ARCH}${cclose} repo"
+		func_update "${PKGNAME}" "${PKGVER}" "${REPODIR}" "${VCSDIR}"
+	done
 done
-
-# work block
-echo -e "${bwhite}[II]${cclose} Checking packages"
-cd "${STAGINGDIR}"
-for PACKAGE in $(/usr/bin/cat pkglist); do
-  if [[ "${PACKAGE}" =~ -i686.pkg.tar.xz$ ]]; then
-    PKGNAME=$(/usr/bin/package-query -p -f %n "${REPODIR}/i686/${PACKAGE}")
-    PKGVER=$(/usr/bin/package-query -p -f %V "${REPODIR}/i686/${PACKAGE}")
-  elif [[ "${PACKAGE}" =~ -any.pkg.tar.xz$ ]]; then
-    ARCH=$(echo ${ARCHS} | /usr/bin/cut -d ' ' -f 1)
-    PKGNAME=$(/usr/bin/package-query -p -f %n "${REPODIR}/${ARCH}/${PACKAGE}")
-    PKGVER=$(/usr/bin/package-query -p -f %V "${REPODIR}/${ARCH}/${PACKAGE}")
-  else
-    PKGNAME=$(/usr/bin/package-query -p -f %n "${REPODIR}/x86_64/${PACKAGE}")
-    PKGVER=$(/usr/bin/package-query -p -f %V "${REPODIR}/x86_64/${PACKAGE}")
-  fi
-  func_update "${PKGNAME}" "${PKGVER}" "${REPODIR}" "${VCSDIR}"
-done
-/usr/bin/rm -f "${STAGINGDIR}/pkglist"
 
 # check for updates
 echo -e "${bwhite}[II]${cclose} Check for updates"
@@ -216,7 +208,7 @@ if [[ $(/usr/bin/find . -type d | /usr/bin/wc -l) > 1 ]]; then
     for PACKAGE in $(/usr/bin/find . -type d); do
       echo -e "${_bwhite}[II] ${_bblue}=>${_cclose} ${PACKAGE}"
     done
-    exit 0
+  else
+  	[ "${CMD_NOCOLOR}" == "yes" ] && /usr/bin/repo-update --nocolor -c "${CONF_FILE}" || /usr/bin/repo-update -c "${CONF_FILE}"
   fi
-  [ "${CMD_NOCOLOR}" == "yes" ] && /usr/bin/repo-update --nocolor -c "${CONF_FILE}" || /usr/bin/repo-update -c "${CONF_FILE}"
 fi
