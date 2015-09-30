@@ -1,7 +1,7 @@
 post_install() {
   post_upgrade
   passwd -l repo &>/dev/null
-	echo -e "Add message"
+	#echo -e "Add message"
 }
 
 post_upgrade() {
