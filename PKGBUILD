@@ -12,6 +12,7 @@ source=(https://github.com/arcan1s/repo-scripts/releases/download/V.${pkgver}/${
 md5sums=('d8f837a936465a75c22b7b81869b8e35')
 
 backup=('etc/repo-scripts.conf')
+install=repo-scripts.install
 
 package() {
   "${srcdir}/${pkgname}/install.sh" "${pkgdir}"
