@@ -1,0 +1,10 @@
+[Unit]
+Description=Service for repo-scripts, for use in a systemd timer
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/repo-daemon --no-daemon
+User=repo
+
+[Install]
+WantedBy=multi-user.target

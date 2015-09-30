@@ -10,5 +10,5 @@ post_upgrade() {
 }
 
 post_remove() {
-	getent passwd repo >/dev/null && userdel -r repo
+	getent passwd repo >/dev/null && userdel -r repo &>/dev/null
 }
