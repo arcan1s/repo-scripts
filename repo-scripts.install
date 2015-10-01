@@ -6,7 +6,7 @@ post_install() {
 
 post_upgrade() {
   getent group repo >/dev/null || groupadd -g 569 repo
-  getent passwd repo >/dev/null || useradd -c 'Repo Script User' -u 569 -g repo -b '/srv' -m -s /bin/bash repo
+  getent passwd repo >/dev/null || useradd -c 'Repo Script User' -u 569 -g repo -b '/srv' -m -s /usr/bin/nologin repo
 }
 
 post_remove() {
