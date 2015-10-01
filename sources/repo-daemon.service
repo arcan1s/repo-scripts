@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 ExecStart=/usr/bin/repo-daemon
-User=root
+User=repo
 RemainAfterExit=yes
 
 [Install]

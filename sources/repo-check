@@ -184,7 +184,7 @@ else
 fi
 # Update database
 echo -e "${bwhite}[II]${cclose} Updating local database"
-/usr/bin/yaourt -Sy
+/usr/bin/sudo /usr/bin/pacman -Sy
 # Get list
 echo -e "${bwhite}[II]${cclose} Getting list of packages"
 for ARCH in ${ARCHS}; do
