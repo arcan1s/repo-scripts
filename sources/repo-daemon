@@ -49,7 +49,12 @@ func_ver() {
 }
 func_create_html() {
   local ITEM
-  echo "<html><body><ul>" > "${1}"
+  echo "<html>" > "${1}"
+  echo "<head>" >> "${1}"
+  echo "<title>${3}</title>" >> "${1}"
+  echo "<link rel="stylesheet" type="text/css" href="reposcript.css">" >> "${1}"
+  echo "</head>" >> "${1}"
+  echo "<body><ul>" >> "${1}"
   for ITEM in $(find ${2}/${3} -name '*.pkg.tar.xz' | sort | sed 's|'${2}/${3}/'||g'); do
     echo "<li><a href=\"${4}/${3}/${ITEM}\">${ITEM}</a></li>" >> "${1}"
   done
