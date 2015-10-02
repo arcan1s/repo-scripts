@@ -36,6 +36,7 @@ func_help() {
                               '/etc/repo-scripts.conf'"
   echo -e "\n  -v   --version            - show version and exit"
   echo -e "  -h   --help               - show this help and exit"
+  echo -e " --no-daemon               - Execute one shot"
   exit 0
 }
 func_ver() {
@@ -48,7 +49,12 @@ func_ver() {
 }
 func_create_html() {
   local ITEM
-  echo "<html><body><ul>" > "${1}"
+  echo "<html>" > "${1}"
+  echo "<head>" >> "${1}"
+  echo "<title>${3}</title>" >> "${1}"
+  echo "<link rel="stylesheet" type="text/css" href="reposcript.css">" >> "${1}"
+  echo "</head>" >> "${1}"
+  echo "<body><ul>" >> "${1}"
   for ITEM in $(find ${2}/${3} -name '*.pkg.tar.xz' | sort | sed 's|'${2}/${3}/'||g'); do
     echo "<li><a href=\"${4}/${3}/${ITEM}\">${ITEM}</a></li>" >> "${1}"
   done
@@ -56,9 +62,13 @@ func_create_html() {
 }
 
 CONF_FILE="/etc/repo-scripts.conf"
+LOOP="true"
+DISABLELOOP="false"
+
 # parametrs parsing
 until [ -z ${1} ]; do
   case "${1}" in
+    "--no-daemon"      ) DISABLELOOP="true"	                                          ;;
     "-h" | "--help"    ) func_help                                                        ;;
     "-v" | "--version" ) func_ver                                                         ;;
     "-c"               ) [ -z "${2}" ] && error_mes "config" || CONF_FILE="${2}" && shift ;;
@@ -71,8 +81,9 @@ ARCHS="i686 x86_64"
 SLEEPTIME="1h"
 CHECKVCSTIME=24
 LOGDIR="${HOME}/arch/logs/"
-ENABLEREPORT="no"
-REMOTEHOST="root@localhost:/var/www/html/"
+REPORTLOG="no"
+REPORTHTML="no"
+REMOTEREMOTEHTML="root@localhost:/var/www/html/"
 REMOTELOG="root@localhost:/var/log/build-repo.log"
 REPOPATH="ftp://localhost/repo/"
 REPODIR="${HOME}/arch/repo/"
@@ -91,28 +102,41 @@ fi
 ## work block
 echo -e "[II] Starting"
 CHECK_VCS=0
-while true; do
-  sleep "${SLEEPTIME}"
+while ${LOOP}; do
   LOGFILE="$(date --utc +%Y-%m-%d-%H-%M).log"
   echo -e "[II] Created log file '${LOGDIR}/${LOGFILE}'"
+  echo -e "[II] Check repository"
   if [[ ${CHECK_VCS} == ${CHECKVCSTIME} ]]; then
-    /usr/bin/repo-check --nocolor -c "${CONF_FILE}" --vcs &> "${LOGDIR}/${LOGFILE}"
+    /usr/bin/repo-check -s --nocolor -c "${CONF_FILE}" --vcs &> "${LOGDIR}/${LOGFILE}"
     CHECK_VCS=0
   else
-    /usr/bin/repo-check --nocolor -c "${CONF_FILE}" &> "${LOGDIR}/${LOGFILE}"
+    /usr/bin/repo-check -s --nocolor -c "${CONF_FILE}" &> "${LOGDIR}/${LOGFILE}"
     CHECK_VCS=$((${CHECK_VCS}+1))
   fi
   [[ ${CHECK_VCS} == 65535 ]] && CHECK_VCS=0
+  echo -e "[II] Update repository"
+  /usr/bin/repo-update --nocolor -c "${CONF_FILE}" &>> "${LOGDIR}/${LOGFILE}"
 
   if [ "${ENABLESYNC}" == "yes" ]; then
+    echo -e "[II] Sync repository"
     /usr/bin/repo-sync -c ${CONF_FILE} &>> "${LOGDIR}/${LOGFILE}"
   fi
-  if [ "${ENABLEREPORT}" == "yes" ]; then
-    echo -e "[II] Send report"
+  if [ "${REPORTLOG}" == "yes" ]; then
+  	echo -e "[II] Send log report"
+  	/usr/bin/scp "${LOGDIR}/${LOGFILE}" "${REMOTELOG}"
+  fi
+  if [ "${REPORTHTML}" == "yes" ]; then
+    echo -e "[II] Send html report"
     for ARCH in ${ARCHS}; do
       func_create_html "${LOGDIR}/${ARCH}.html" "${REPODIR}" "${ARCH}" "${REPOPATH}"
-      /usr/bin/scp "${LOGDIR}/${ARCH}.html" "${REMOTEHOST}/${ARCH}/index.html"
+      /usr/bin/scp "${LOGDIR}/${ARCH}.html" "${REMOTEHTML}/${ARCH}/index.html"
     done
-    /usr/bin/scp "${LOGDIR}/${LOGFILE}" "${REMOTELOG}"
+  fi
+  if [ ${DISABLELOOP} = "true" ]; then
+  	LOOP="false"
+        echo -e "[II] Disable daemon mode, only one shot"
+  else
+        sleep "${SLEEPTIME}"
   fi
 done
+echo -e "[II] Stoped"
