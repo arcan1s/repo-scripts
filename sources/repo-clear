@@ -68,7 +68,7 @@ until [ -z $1 ]; do
     "-v" | "--version" ) func_ver                                                         ;;
     "-c"               ) [ -z "${2}" ] && error_mes "config" || CONF_FILE="${2}" && shift ;;
     "--nocolor"        ) CMD_NOCOLOR="yes"                                                ;;
-    *                  ) PKGLIST+=("${1}")                                                  ;;
+    *                  ) PKGLIST+=("${1}")                                                ;;
   esac
   shift
 done

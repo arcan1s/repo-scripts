@@ -20,7 +20,7 @@
 
 # functions
 error_mes() {
-  if [ "${USECOLOR}" == "yes" ]; then
+  if [[ ${USECOLOR} == "yes" ]]; then
     local _red='\e[0;31m'
     local _bwhite='\e[1;37m'
     local _cclose='\e[0m'
@@ -53,7 +53,7 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-insert                                  "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.6.0                                                  License : GPLv3"
+  echo -e "Version : 1.6.1                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
@@ -67,7 +67,7 @@ UPDATEREPO="true"
 CHECKREPO="false"
 
 # parametrs parsing
-until [ -z $1 ]; do
+until [ -z "$1" ]; do
   case "$1" in
     "-d" | "--no-update"    ) UPDATEREPO="false"                                               ;;
     "-s" | "--check"        ) CHECKREPO="true"                                                 ;;
@@ -86,8 +86,8 @@ USECOLOR="yes"
 
 source "${CONF_FILE}"
 
-[ "${CMD_NOCOLOR}" == "yes" ] && USECOLOR="no"
-if [ "${USECOLOR}" == "yes" ]; then
+[[ ${CMD_NOCOLOR} == "yes" ]] && USECOLOR="no"
+if [[ ${USECOLOR} == "yes" ]]; then
   bblue='\e[1;34m'
   bwhite='\e[1;37m'
   cclose='\e[0m'
@@ -104,21 +104,17 @@ fi
 
 
 cd "${STAGINGDIR}"
-[ "${CMD_NOCOLOR}" == "yes" ] && NOCOLORFLAG="--nocolor" || NOCOLORFLAG=""
+[[ ${CMD_NOCOLOR} == "yes" ]] && NOCOLORFLAG="--nocolor" || NOCOLORFLAG=""
 for PKGNAME in ${PKGLIST[@]}; do
   /usr/bin/yaourt -G "${PKGNAME}"
   if [ ! -d "${PKGNAME}" ]; then
     error_mes "package" "${PKGNAME}"
   else
     echo -e "${bwhite}[II]${cclose} Added package ${bwhite}${PKGNAME}${cclose}"
-    if [ "${CHECKREPO}" == "true" ]; then
+    if [[ ${CHECKREPO} == "true" ]]; then
       /usr/bin/repo-check "${NOCOLORFLAG}" -c "${CONF_FILE}"
-    elif [ "${UPDATEREPO}" == "true" ]; then
+    elif [[ ${UPDATEREPO} == "true" ]]; then
       /usr/bin/repo-update "${NOCOLORFLAG}" -c "${CONF_FILE}"
     fi
   fi
 done
-
-
-
-

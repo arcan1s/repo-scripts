@@ -36,7 +36,7 @@ error_mes() {
 
 func_help() {
   echo -e "Script written on BASH to sync repositories between folder or servers"
-  echo -e "\nUsage: repo-sync [ -c /etc/repo-scripts.conf ] [ -v | --version ] [ -h | --help ]"
+  echo -e "\nUsage: repo-sync [ -c /etc/repo-scripts.conf ] [ --nocolor ] [ -v | --version ] [ -h | --help ]"
   echo -e "\nParametrs:"
   echo -e "  -c               PATH     - path to configuration file. Default is
                               '/etc/repo-scripts.conf'"
@@ -49,7 +49,7 @@ func_help() {
 func_ver() {
   echo -e "                                    repo-sync                                   "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.6.0                                                  License : GPLv3"
+  echo -e "Version : 1.6.1                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
@@ -59,7 +59,7 @@ CMD_NOCOLOR="no"
 CONF_FILE="/etc/repo-scripts.conf"
 
 # parametrs parsing
-until [ -z $1 ]; do
+until [ -z "$1" ]; do
   case "$1" in
     "-h" | "--help"    ) func_help                                                        ;;
     "-v" | "--version" ) func_ver                                                         ;;
@@ -82,8 +82,8 @@ REMOTESYNC="${HOME}/arch/reposync"
 
 echo -e "[II] Reading configuration from '${CONF_FILE}'"
 source "${CONF_FILE}"
-[ "${CMD_NOCOLOR}" == "yes" ] && USECOLOR="no"
-if [ "${USECOLOR}" == "yes" ]; then
+[[ ${CMD_NOCOLOR} == "yes" ]] && USECOLOR="no"
+if [[ ${USECOLOR} == "yes" ]]; then
   bblue='\e[1;34m'
   bwhite='\e[1;37m'
   cclose='\e[0m'

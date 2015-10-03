@@ -30,19 +30,19 @@ error_mes() {
 }
 func_help() {
   echo -e "Script written on BASH for checking packages for updates as daemon"
-  echo -e "\nUsage: repo-daemon [ -c /etc/repo-scripts.conf ] [ -s ] [ -v | --version ] [ -h | --help ]"
+  echo -e "\nUsage: repo-daemon [ -c /etc/repo-scripts.conf ] [ --no-daemon ] [ -v | --version ] [ -h | --help ]"
   echo -e "\nParametrs:"
   echo -e "  -c               PATH     - path to configuration file. Default is
                               '/etc/repo-scripts.conf'"
+  echo -e "       --no-daemon          - Execute one shot"
   echo -e "\n  -v   --version            - show version and exit"
   echo -e "  -h   --help               - show this help and exit"
-  echo -e " --no-daemon               - Execute one shot"
   exit 0
 }
 func_ver() {
   echo -e "                                   repo-daemon                                  "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.6.0                                                  License : GPLv3"
+  echo -e "Version : 1.6.1                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
@@ -66,9 +66,9 @@ LOOP="true"
 DISABLELOOP="false"
 
 # parametrs parsing
-until [ -z ${1} ]; do
+until [ -z "${1}" ]; do
   case "${1}" in
-    "--no-daemon"      ) DISABLELOOP="true"	                                          ;;
+    "--no-daemon"      ) DISABLELOOP="true"                                               ;;
     "-h" | "--help"    ) func_help                                                        ;;
     "-v" | "--version" ) func_ver                                                         ;;
     "-c"               ) [ -z "${2}" ] && error_mes "config" || CONF_FILE="${2}" && shift ;;
@@ -103,40 +103,44 @@ fi
 echo -e "[II] Starting"
 CHECK_VCS=0
 while ${LOOP}; do
+  # if daemon node is enabled we will sleep first. It is required to avoid repo
+  # checking on system load
+  if [[ ${DISABLELOOP} = "true" ]]; then
+    # exit from main loop if oneshot
+    LOOP="false"
+    echo -e "[II] Disable daemon mode, only one shot"
+  else
+    sleep "${SLEEPTIME}"
+  fi
+  # main block
   LOGFILE="$(date --utc +%Y-%m-%d-%H-%M).log"
   echo -e "[II] Created log file '${LOGDIR}/${LOGFILE}'"
   echo -e "[II] Check repository"
   if [[ ${CHECK_VCS} == ${CHECKVCSTIME} ]]; then
-    /usr/bin/repo-check -s --nocolor -c "${CONF_FILE}" --vcs &> "${LOGDIR}/${LOGFILE}"
+    /usr/bin/repo-check -s --nocolor -c "${CONF_FILE}" --vcs &>> "${LOGDIR}/${LOGFILE}"
     CHECK_VCS=0
   else
-    /usr/bin/repo-check -s --nocolor -c "${CONF_FILE}" &> "${LOGDIR}/${LOGFILE}"
+    /usr/bin/repo-check -s --nocolor -c "${CONF_FILE}" &>> "${LOGDIR}/${LOGFILE}"
     CHECK_VCS=$((${CHECK_VCS}+1))
   fi
   [[ ${CHECK_VCS} == 65535 ]] && CHECK_VCS=0
   echo -e "[II] Update repository"
   /usr/bin/repo-update --nocolor -c "${CONF_FILE}" &>> "${LOGDIR}/${LOGFILE}"
 
-  if [ "${ENABLESYNC}" == "yes" ]; then
+  if [[ ${ENABLESYNC} == "yes" ]]; then
     echo -e "[II] Sync repository"
-    /usr/bin/repo-sync -c ${CONF_FILE} &>> "${LOGDIR}/${LOGFILE}"
+    /usr/bin/repo-sync -c "${CONF_FILE}" &>> "${LOGDIR}/${LOGFILE}"
   fi
-  if [ "${REPORTLOG}" == "yes" ]; then
-  	echo -e "[II] Send log report"
-  	/usr/bin/scp "${LOGDIR}/${LOGFILE}" "${REMOTELOG}"
+  if [[ ${REPORTLOG} == "yes" ]]; then
+    echo -e "[II] Send log report"
+    /usr/bin/scp "${LOGDIR}/${LOGFILE}" "${REMOTELOG}"
   fi
-  if [ "${REPORTHTML}" == "yes" ]; then
+  if [[ ${REPORTHTML} == "yes" ]]; then
     echo -e "[II] Send html report"
     for ARCH in ${ARCHS}; do
       func_create_html "${LOGDIR}/${ARCH}.html" "${REPODIR}" "${ARCH}" "${REPOPATH}"
       /usr/bin/scp "${LOGDIR}/${ARCH}.html" "${REMOTEHTML}/${ARCH}/index.html"
     done
-  fi
-  if [ ${DISABLELOOP} = "true" ]; then
-  	LOOP="false"
-        echo -e "[II] Disable daemon mode, only one shot"
-  else
-        sleep "${SLEEPTIME}"
   fi
 done
 echo -e "[II] Stoped"
