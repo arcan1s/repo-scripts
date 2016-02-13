@@ -114,7 +114,6 @@ for ARCH in ${ARCHS}; do
       if [ "${PKGNAME}" == "${_PKGNAME}" ]; then
         /usr/bin/rm -f "${PKG}"{,.sig}
         /usr/bin/repo-remove "${DBNAME}.db.tar.gz" "${PKGNAME}"
-        /usr/bin/repo-remove "${DBNAME}.files.tar.gz" "${PKGNAME}"
       fi
     done
   done
