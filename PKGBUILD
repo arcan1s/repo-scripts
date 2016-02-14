@@ -9,7 +9,7 @@ url="https://github.com/arcan1s/repo-scripts"
 license=("GPLv3")
 depends=('devtools' 'sudo' 'yaourt')
 source=("https://github.com/arcan1s/repo-scripts/releases/download/V.${pkgver}/${pkgname}-${pkgver}-src.tar.xz")
-md5sums=('a5c10af365ac93cdae96a6195c8335b8')
+md5sums=('0262d6cc1026f962ce551c54c2e59b55')
 install="repo-scripts.install"
 backup=('etc/repo-scripts.conf')
 
