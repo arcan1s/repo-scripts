@@ -51,7 +51,7 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-update                                  "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.7.0                                                  License : GPLv3"
+  echo -e "Version : 1.7.1                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
@@ -179,14 +179,14 @@ if [[ ${USEGPG} == "yes" ]]; then
   cd "${PREPAREDIR}"
   for PACKAGE in $(/usr/bin/find . -name '*.pkg.tar.xz'); do
     PKGNAME=$(/usr/bin/package-query -p -f %n "${PACKAGE}")
-    PGPKEYCMD=""
+    PGPKEYCMD="/usr/bin/gpg"
     PGPVAR="PGPKEY_${PKGNAME}"
     if [ ! -z "${!PGPVAR}" ]; then
-      PGPKEYCMD="-u ${!PGPVAR}"
+      PGPKEYCMD+=" -u ${!PGPVAR}"
     elif [ ! -z "${PGPKEY}" ]; then
-      PGPKEYCMD="-u ${PGPKEY}"
+      PGPKEYCMD+=" -u ${PGPKEY}"
     fi
-    /usr/bin/gpg -b "${PGPKEYCMD}" "${PACKAGE}" && echo "Signed ${PACKAGE}" || error_mes "gpg"
+    "${PGPKEYCMD}" -b "${PACKAGE}" && echo "Signed ${PACKAGE}" || error_mes "gpg"
   done
 fi
 
