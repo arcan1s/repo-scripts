@@ -51,7 +51,7 @@ func_help() {
 func_ver() {
   echo -e "                                   repo-update                                  "
   echo -e "A set of scripts to work with your repository                                   "
-  echo -e "Version : 1.7.1                                                  License : GPLv3"
+  echo -e "Version : 1.7.2                                                  License : GPLv3"
   echo -e "Author :                                             Evgeniy Alexeev aka arcanis"
   echo -e "E-mail :                                          esalexeev (at) gmail (dot) com"
   exit 0
@@ -80,9 +80,10 @@ until [ -z ${1} ]; do
   shift
 done
 # default values
-ARCHS="i686 x86_64"
+ARCHS="x86_64"
 DBNAME="custom"
 LOCKFILE="/tmp/repo-update.lock"
+MAKEPKGFLAGS="--skippgpcheck"
 PREPAREDIR="${HOME}/arch/prepare"
 REPODIR="${HOME}/arch/repo"
 ROOTDIR="${HOME}/arch/root"
@@ -90,8 +91,7 @@ STAGINGDIR="${HOME}/arch/staging"
 SYMLINK="no"
 USECOLOR="yes"
 USEGPG="yes"
-TOOLSDEFAULT="/usr/bin/extra-i686-build"
-TOOLSi686="/usr/bin/extra-i686-build"
+TOOLSDEFAULT="/usr/bin/extra-x86_64-build"
 TOOLSx86_64="/usr/bin/extra-x86_64-build"
 TOOLSMULTILIB="/usr/bin/multilib-build"
 echo -e "[II] Reading configuration from '${CONF_FILE}'"
@@ -148,7 +148,7 @@ for PACKAGE in $(/usr/bin/find -name 'PKGBUILD' -type f); do
     # Build if package is any architecture
     if [[ ${PKGARCHS} =~ any ]]; then
       echo -e "${bwhite}[III] ${bblue}=>${cclose} Build using default tools${cclose}";
-      LC_MESSAGES=C /usr/bin/sudo ${TOOLSDEFAULT} -r ${ROOTDIR} ${RECHROOT}
+      LC_MESSAGES=C /usr/bin/sudo ${TOOLSDEFAULT} -r ${ROOTDIR} ${RECHROOT} -- -- ${MAKEPKGFLAGS}
     else
       # Build for repo architecture
       for ARCH in ${ARCHS}; do
@@ -159,10 +159,10 @@ for PACKAGE in $(/usr/bin/find -name 'PKGBUILD' -type f); do
             # Build if package is a lib32 type or depends of lib32 package or multilib package
             if [ ${ARCH} == "x86_64" ] && ( [[ ${pkgname} =~ lib32 ]] || /usr/bin/grep 'lib32' PKGBUILD -q || /usr/bin/grep 'multilib' PKGBUILD -q ); then
               echo -e "${bwhite}[III] ${bblue}=>${cclose} Build using multilib tools${cclose}";
-              LC_MESSAGES=C /usr/bin/sudo ${TOOLSMULTILIB} -r ${ROOTDIR} ${RECHROOT}
+              LC_MESSAGES=C /usr/bin/sudo ${TOOLSMULTILIB} -r ${ROOTDIR} ${RECHROOT} -- -- ${MAKEPKGFLAGS}
             else
               echo -e "${bwhite}[III] ${bblue}=>${cclose} Build using ${ARCH} tools${cclose}";
-              LC_MESSAGES=C /usr/bin/sudo ${!TOOLCHAIN} -r ${ROOTDIR} ${RECHROOT}
+              LC_MESSAGES=C /usr/bin/sudo ${!TOOLCHAIN} -r ${ROOTDIR} ${RECHROOT} -- -- ${MAKEPKGFLAGS}
             fi
           fi
         done
@@ -180,13 +180,13 @@ if [[ ${USEGPG} == "yes" ]]; then
   for PACKAGE in $(/usr/bin/find . -name '*.pkg.tar.xz'); do
     PKGNAME=$(/usr/bin/package-query -p -f %n "${PACKAGE}")
     PGPKEYCMD="/usr/bin/gpg"
-    PGPVAR="PGPKEY_${PKGNAME}"
+    PGPVAR="PGPKEY_${PKGNAME/-/_}"
     if [ ! -z "${!PGPVAR}" ]; then
       PGPKEYCMD+=" -u ${!PGPVAR}"
     elif [ ! -z "${PGPKEY}" ]; then
       PGPKEYCMD+=" -u ${PGPKEY}"
     fi
-    "${PGPKEYCMD}" -b "${PACKAGE}" && echo "Signed ${PACKAGE}" || error_mes "gpg"
+    ${PGPKEYCMD} -b "${PACKAGE}" && echo "Signed ${PACKAGE}" || error_mes "gpg"
   done
 fi
 
